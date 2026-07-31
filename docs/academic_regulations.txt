@@ -1,0 +1,41 @@
+==============================================================================
+DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING - ACADEMIC GOVERNANCE HANDBOOK
+==============================================================================
+
+SECTION 1: ATTENDANCE & EXAMINATION ELIGIBILITY
+------------------------------------------------------------------------------
+Clause 1.1: Minimum Attendance Requirement
+Every student is required to maintain a minimum of 75% attendance in each registered subject/lab during the semester to be eligible for End-Semester Examinations.
+
+Clause 1.2: Condonation of Attendance Shortage
+1.2.1 Attendance between 65% and 74% may be condoned by the Head of Department (HOD) only on medical grounds or official duty participation.
+1.2.2 Condonation requires a valid Medical Certificate issued by a registered medical practitioner, submitted within 5 working days of resuming classes.
+1.2.3 A condonation fee of Rs. 500 per subject applies upon approval.
+1.2.4 Students with attendance below 65% are strictly detainable (Detained Status) and must re-register for the course in the subsequent academic year. No condonation is allowed below 65%.
+
+SECTION 2: LEAVE APPLICATION RULES
+------------------------------------------------------------------------------
+Clause 2.1: Medical Leave Guidelines
+- Medical leave applications must be submitted via the DepartmentAI Portal prior to or within 48 hours of medical emergency.
+- For medical leaves exceeding 3 consecutive days, hospitalization records or medical certificates must be uploaded.
+
+Clause 2.2: Duty Leave (Academic / Sports / Placements)
+- Duty leave is granted for students representing the institution in hackathons, sports events, placement drives, or research conferences.
+- Maximum allowable duty leave per semester is 10 working days. Attendance credit is granted upon verification by the Faculty Incharge.
+
+SECTION 3: FACULTY WORKLOAD & RESEARCH GUIDELINES
+------------------------------------------------------------------------------
+Clause 3.1: Weekly Workload Norms (AICTE / NBA Standards)
+- Professor / HOD: 12-14 teaching hours per week + 8 administrative hours.
+- Associate Professor: 14-16 teaching hours per week.
+- Assistant Professor: 16-18 teaching hours per week.
+
+Clause 3.2: Research & Accreditation (NBA / NAAC) Criteria
+- Faculty members must publish at least 1 SCI/Scopus indexed paper per academic year.
+- Course Outcomes (CO) and Program Outcomes (PO) attainment calculations must be updated within 14 days of mid-semester exams.
+
+SECTION 4: TIMETABLE & LAB ALLOCATION RULES
+------------------------------------------------------------------------------
+Clause 4.1: Lab Batch Distribution
+- Maximum lab batch size is 30 students per instructor.
+- High-performance AI/ML computing labs are allocated preferentially to 3rd & 4th year project batches.

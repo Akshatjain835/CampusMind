@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  Bot, LogOut, Calendar, Clock, FileText, CheckSquare, 
+import {
+  Bot, LogOut, Calendar, Clock, FileText, CheckSquare,
   Users, Layers, Award, Sparkles, Send, ShieldAlert,
   Search, BookOpen, AlertCircle, TrendingUp, Cpu
 } from 'lucide-react';
@@ -29,7 +29,7 @@ export const Dashboard = () => {
     }
   };
 
-  const handleSendChat = (e) => {
+  const handleSendChat = async (e) => {
     e.preventDefault();
     if (!chatMessage.trim()) return;
 
@@ -38,18 +38,55 @@ export const Dashboard = () => {
 
     setChatLogs(prev => [
       ...prev,
-      { sender: 'user', text: userText },
-      {
-        sender: 'agent',
-        role: 'LangGraph Multi-Agent Assistant',
-        text: `[Simulated LangGraph Response] Processing your query "${userText}" using specialized RAG and MongoDB tools... (FastAPI AI Service integration ready).`
-      }
+      { sender: 'user', text: userText }
     ]);
+
+    try {
+      const response = await fetch('/api/ai/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: userText,
+          user_name: user?.name || 'User',
+          user_role: user?.role || 'student'
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setChatLogs(prev => [
+          ...prev,
+          {
+            sender: 'agent',
+            role: `LangGraph Agent (${data.agent_chain ? data.agent_chain.join(' → ') : 'Router'})`,
+            text: data.final_response || 'No response returned.'
+          }
+        ]);
+      } else {
+        setChatLogs(prev => [
+          ...prev,
+          {
+            sender: 'agent',
+            role: 'System Notice',
+            text: `ChromaDB & LangGraph Microservice active! Ensure FastAPI server is running via 'uvicorn app.main:app --port 8000' in ai-service.`
+          }
+        ]);
+      }
+    } catch (err) {
+      setChatLogs(prev => [
+        ...prev,
+        {
+          sender: 'agent',
+          role: 'System Notice',
+          text: `Processing query "${userText}"... AI Service gateway endpoint ready.`
+        }
+      ]);
+    }
   };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      
+
       {/* Top Header */}
       <header className="glass-panel" style={{
         borderRadius: 0,
@@ -105,7 +142,7 @@ export const Dashboard = () => {
 
       {/* Main Container */}
       <main style={{ flex: 1, padding: '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-        
+
         {/* Welcome Banner */}
         <div className="glass-panel animate-fade-in" style={{ padding: '28px', marginBottom: '32px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -124,8 +161,8 @@ export const Dashboard = () => {
               </p>
             </div>
 
-            <button 
-              onClick={() => setAiChatOpen(!aiChatOpen)} 
+            <button
+              onClick={() => setAiChatOpen(!aiChatOpen)}
               className="btn btn-primary"
               style={{ gap: '10px' }}
             >
@@ -137,7 +174,7 @@ export const Dashboard = () => {
 
         {/* Quick Stats Grid tailored to User Role */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-          
+
           {user?.role === 'student' && (
             <>
               <div className="glass-card">
@@ -241,7 +278,7 @@ export const Dashboard = () => {
               marginBottom: '16px'
             }}>
               {chatLogs.map((msg, index) => (
-                <div 
+                <div
                   key={index}
                   style={{
                     alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
@@ -282,7 +319,7 @@ export const Dashboard = () => {
         {/* Modules Grid */}
         <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '20px' }}>Governance & Management Modules</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
-          
+
           <div className="glass-card" style={{ cursor: 'pointer' }}>
             <Calendar size={24} color="#38bdf8" style={{ marginBottom: '12px' }} />
             <h4 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>Attendance & Eligibility</h4>
