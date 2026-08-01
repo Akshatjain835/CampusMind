@@ -112,15 +112,27 @@ export const getMyLeaves = async (req, res) => {
   }
 };
 
-// @desc    Get all pending leaves for Faculty/HOD approval
+// @desc    Get all pending leaves for Faculty/HOD approval (Concerned Department Only)
 // @route   GET /api/leaves/pending
 // @access  Private (Faculty/HOD/Admin)
 export const getPendingLeaves = async (req, res) => {
   try {
-    const leaves = await LeaveRequest.find({ status: 'Pending' })
+    const allPendingLeaves = await LeaveRequest.find({ status: 'Pending' })
       .populate('applicant', 'name email rollNumber department designation semester section')
       .sort({ createdAt: -1 });
-    res.json(leaves);
+
+    const reviewerDepartment = req.user.department;
+    const reviewerRole = req.user.role;
+
+    // Filter leaves so Faculty/HOD ONLY see leave requests from their own department
+    const departmentLeaves = reviewerRole === 'admin' 
+      ? allPendingLeaves 
+      : allPendingLeaves.filter(leave => {
+          const studentDept = leave.applicant?.department || 'Computer Science & Engineering';
+          return studentDept === reviewerDepartment;
+        });
+
+    res.json(departmentLeaves);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -142,26 +154,35 @@ export const reviewLeave = async (req, res) => {
     }
 
     const reviewerRole = req.user.role;
+    const reviewerDepartment = req.user.department;
+    const studentDepartment = leave.applicant?.department || 'Computer Science & Engineering';
     const applicantRole = leave.applicantRole || leave.applicant?.role || 'student';
     const recStatus = leave.aiRecommendation?.recommendedStatus;
 
-    // --- STRICT GOVERNANCE AUTHORITY VERIFICATION MATRIX ---
+    // --- STRICT CONCERNED AUTHORITY & DEPARTMENT VERIFICATION MATRIX ---
+
+    // Rule 0: Reviewer MUST belong to the concerned student's department (unless global admin)
+    if (reviewerRole !== 'admin' && reviewerDepartment !== studentDepartment) {
+      return res.status(403).json({
+        message: `Authority Denied: You are not the concerned authority. This student belongs to the '${studentDepartment}' department, whereas your account is in '${reviewerDepartment}'.`
+      });
+    }
     
-    // Rule 1: Faculty Leaves MUST be approved by HOD or Admin only
+    // Rule 1: Faculty Leaves MUST be approved by HOD or Admin of that department
     if (applicantRole === 'faculty' && !['hod', 'admin'].includes(reviewerRole)) {
       return res.status(403).json({
-        message: 'Authority Denied: Faculty leave requests strictly require HOD or Admin approval.'
+        message: `Authority Denied: Faculty leave requests strictly require the concerned HOD (${studentDepartment}) approval.`
       });
     }
 
-    // Rule 2: Student Condonation Leaves (Needs Review / Reject AI status or Medical/Duty type) MUST be approved by HOD or Admin
+    // Rule 2: Student Condonation Leaves (Needs Review / Reject AI status or Medical/Duty type) MUST be approved by Concerned HOD
     if (
       applicantRole === 'student' &&
       (recStatus === 'Needs Review' || recStatus === 'Reject' || leave.leaveType === 'Medical') &&
       !['hod', 'admin'].includes(reviewerRole)
     ) {
       return res.status(403).json({
-        message: 'Authority Denied: Attendance condonation and medical leave requests strictly require HOD approval.'
+        message: `Authority Denied: Attendance condonation & medical leave requests strictly require the concerned HOD of ${studentDepartment}.`
       });
     }
 

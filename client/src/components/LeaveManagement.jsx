@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LeaveModal } from './LeaveModal';
-import { 
-  FileText, Plus, CheckCircle2, XCircle, Clock, 
+import {
+  FileText, Plus, CheckCircle2, XCircle, Clock,
   Sparkles, User, AlertCircle, ShieldCheck
 } from 'lucide-react';
 
@@ -88,7 +88,7 @@ export const LeaveManagement = () => {
 
   return (
     <div className="glass-panel animate-fade-in" style={{ padding: '28px', marginBottom: '32px' }}>
-      
+
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
@@ -168,16 +168,16 @@ export const LeaveManagement = () => {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {leaves.map((leave) => (
-            <div 
-              key={leave._id} 
-              className="glass-card" 
+            <div
+              key={leave._id}
+              className="glass-card"
               style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                     <h4 style={{ fontSize: '1.1rem', fontWeight: 700 }}>
-                      {leave.applicant?.name || 'Applicant'} 
+                      {leave.applicant?.name || 'Applicant'}
                       {leave.applicant?.rollNumber && ` (${leave.applicant.rollNumber})`}
                     </h4>
                     <span style={{
@@ -238,29 +238,40 @@ export const LeaveManagement = () => {
                     {leave.aiRecommendation.reasoning}
                   </p>
 
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                    📊 {leave.aiRecommendation.attendanceImpact}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-dim)', borderTop: '1px solid rgba(255, 255, 255, 0.05)', paddingTop: '6px' }}>
+                    <span>📊 {leave.aiRecommendation.attendanceImpact}</span>
+                    <span style={{ color: '#818cf8', fontWeight: 600 }}>
+                      🔒 Concerned Authority: {leave.applicant?.department || 'CSE'} Department Only
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* Review Action Buttons for Faculty/HOD */}
               {user?.role !== 'student' && leave.status === 'Pending' && (
-                <div style={{ display: 'flex', gap: '12px', marginTop: '8px', justifyContent: 'flex-end' }}>
-                  <button 
-                    onClick={() => handleReviewLeave(leave._id, 'Rejected')} 
-                    className="btn btn-secondary" 
-                    style={{ padding: '6px 16px', fontSize: '0.85rem', color: '#f43f5e' }}
-                  >
-                    <XCircle size={16} /> Reject Leave
-                  </button>
-                  <button 
-                    onClick={() => handleReviewLeave(leave._id, 'Approved')} 
-                    className="btn btn-primary" 
-                    style={{ padding: '6px 16px', fontSize: '0.85rem' }}
-                  >
-                    <CheckCircle2 size={16} /> Approve Leave
-                  </button>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                  <div style={{ fontSize: '0.75rem', color: user?.department === (leave.applicant?.department || 'Computer Science & Engineering') || user?.role === 'admin' ? '#34d399' : '#f43f5e' }}>
+                    {user?.department === (leave.applicant?.department || 'Computer Science & Engineering') || user?.role === 'admin'
+                      ? '✓ Authorized Concerned Department Reviewer'
+                      : '🔒 Restricted: Must be Concerned Department Authority'}
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button
+                      onClick={() => handleReviewLeave(leave._id, 'Rejected')}
+                      className="btn btn-secondary"
+                      style={{ padding: '6px 16px', fontSize: '0.85rem', color: '#f43f5e' }}
+                    >
+                      <XCircle size={16} /> Reject Leave
+                    </button>
+                    <button
+                      onClick={() => handleReviewLeave(leave._id, 'Approved')}
+                      className="btn btn-primary"
+                      style={{ padding: '6px 16px', fontSize: '0.85rem' }}
+                    >
+                      <CheckCircle2 size={16} /> Approve Leave
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -270,10 +281,10 @@ export const LeaveManagement = () => {
       )}
 
       {/* Leave Application Modal */}
-      <LeaveModal 
-        isOpen={modalOpen} 
-        onClose={() => setModalOpen(false)} 
-        onLeaveApplied={() => fetchLeaves()} 
+      <LeaveModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onLeaveApplied={() => fetchLeaves()}
       />
 
     </div>

@@ -14,6 +14,7 @@ export const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [role, setRole] = useState('student');
+  const [department, setDepartment] = useState('Computer Science & Engineering');
   const [rollNumber, setRollNumber] = useState('');
   const [designation, setDesignation] = useState('');
 
@@ -24,7 +25,7 @@ export const LoginPage = () => {
 
     try {
       if (isRegister) {
-        await register({ name, email, password, role, rollNumber, designation });
+        await register({ name, email, password, role, department, rollNumber, designation });
       } else {
         await login(email, password);
       }
@@ -249,6 +250,21 @@ export const LoginPage = () => {
                     <option value="faculty">Faculty Member</option>
                     <option value="hod">Head of Department (HOD)</option>
                     <option value="admin">System Administrator</option>
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Academic Department</label>
+                  <select
+                    className="form-select"
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                  >
+                    <option value="Computer Science & Engineering">Computer Science & Engineering</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Electrical Engineering">Electrical Engineering</option>
+                    <option value="Mechanical Engineering">Mechanical Engineering</option>
+                    <option value="Civil Engineering">Civil Engineering</option>
                   </select>
                 </div>
 
