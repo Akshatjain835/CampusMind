@@ -18,12 +18,18 @@ def get_qdrant_client():
     qdrant_api_key = os.getenv("QDRANT_API_KEY")
     
     if qdrant_url and qdrant_api_key:
-        print(f"[Qdrant Client] Connecting to Qdrant Cloud Cluster: {qdrant_url}")
-        return QdrantClient(url=qdrant_url, api_key=qdrant_api_key)
-    else:
-        print(f"[Qdrant Client] Using Local Qdrant Storage: {os.path.abspath(QDRANT_PATH)}")
-        os.makedirs(QDRANT_PATH, exist_ok=True)
-        return QdrantClient(path=QDRANT_PATH)
+        try:
+            print(f"[Qdrant Client] Connecting to Qdrant Cloud Cluster: {qdrant_url}")
+            client = QdrantClient(url=qdrant_url, api_key=qdrant_api_key, timeout=60)
+            # Test connectivity
+            client.get_collections()
+            return client
+        except Exception as e:
+            print(f"[Qdrant Cloud Warning] Connection timed out or failed ({e}). Falling back to Local Qdrant Storage...")
+            
+    print(f"[Qdrant Client] Using Local Qdrant Storage: {os.path.abspath(QDRANT_PATH)}")
+    os.makedirs(QDRANT_PATH, exist_ok=True)
+    return QdrantClient(path=QDRANT_PATH)
 
 def chunk_text(text: str, chunk_size: int = 400, overlap: int = 50):
     chunks = []

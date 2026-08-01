@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { LeaveManagement } from './LeaveManagement';
 import {
   Bot, LogOut, Calendar, Clock, FileText, CheckSquare,
   Users, Layers, Award, Sparkles, Send, ShieldAlert,
@@ -315,6 +316,9 @@ export const Dashboard = () => {
             </form>
           </div>
         )}
+
+        {/* Leave Governance System Component */}
+        <LeaveManagement />
 
         {/* Modules Grid */}
         <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '20px' }}>Governance & Management Modules</h3>

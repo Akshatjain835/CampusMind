@@ -5,6 +5,7 @@ from typing import Optional
 from app.graphs.department_graph import department_graph, DepartmentState
 from app.rag.qdrant_ingester import ingest_to_qdrant
 from app.rag.qdrant_retriever import search_qdrant_regulations
+from app.agents.leave_agent import evaluate_leave_request
 
 app = FastAPI(
     title="DepartmentAI FastAPI Microservice",
@@ -28,6 +29,15 @@ class QueryRequest(BaseModel):
 class SearchRequest(BaseModel):
     query: str
     top_k: Optional[int] = 3
+
+class LeaveEvaluationRequest(BaseModel):
+    user_name: str
+    user_role: str = "student"
+    leave_type: str
+    start_date: str
+    end_date: str
+    reason: str
+    current_attendance: float = 80.0
 
 @app.get("/")
 def read_root():
@@ -56,6 +66,21 @@ def search_qdrant(request: SearchRequest):
     try:
         results = search_qdrant_regulations(request.query, top_k=request.top_k)
         return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/evaluate-leave")
+def evaluate_student_leave(request: LeaveEvaluationRequest):
+    """Executes AI Leave Agent to evaluate leave request against Qdrant regulations."""
+    try:
+        result = evaluate_leave_request(
+            user_name=request.user_name,
+            user_role=request.user_role,
+            leave_type=request.leave_type,
+            reason=request.reason,
+            current_attendance=request.current_attendance
+        )
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
