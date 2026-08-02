@@ -138,6 +138,32 @@ export const getPendingLeaves = async (req, res) => {
   }
 };
 
+// @desc    Get all reviewed (Approved/Rejected) leave history for Faculty/HOD auditing
+// @route   GET /api/leaves/history
+// @access  Private (Faculty/HOD/Admin)
+export const getLeaveHistory = async (req, res) => {
+  try {
+    const allReviewedLeaves = await LeaveRequest.find({ status: { $ne: 'Pending' } })
+      .populate('applicant', 'name email rollNumber department designation semester section')
+      .populate('reviewedBy', 'name designation role')
+      .sort({ updatedAt: -1 });
+
+    const reviewerDepartment = req.user.department;
+    const reviewerRole = req.user.role;
+
+    const departmentHistory = reviewerRole === 'admin'
+      ? allReviewedLeaves
+      : allReviewedLeaves.filter(leave => {
+          const studentDept = leave.applicant?.department || 'Computer Science & Engineering';
+          return studentDept === reviewerDepartment;
+        });
+
+    res.json(departmentHistory);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Approve or Reject leave request with strict authority matrix validation
 // @route   PUT /api/leaves/:id/review
 // @access  Private (Faculty/HOD/Admin based on approval authority level)

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LeaveManagement } from './LeaveManagement';
+import { FacultyApprovalPortal } from './FacultyApprovalPortal';
 import {
   Bot, LogOut, Calendar, Clock, FileText, CheckSquare,
   Users, Layers, Award, Sparkles, Send, ShieldAlert,
@@ -317,8 +318,8 @@ export const Dashboard = () => {
           </div>
         )}
 
-        {/* Leave Governance System Component */}
-        <LeaveManagement />
+        {/* Leave Governance System & Faculty Approval Portal */}
+        {user?.role === 'student' ? <LeaveManagement /> : <FacultyApprovalPortal />}
 
         {/* Modules Grid */}
         <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '20px' }}>Governance & Management Modules</h3>
