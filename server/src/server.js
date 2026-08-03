@@ -5,6 +5,7 @@ import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
+import noticeRoutes from './routes/noticeRoutes.js';
 
 dotenv.config();
 
@@ -24,6 +25,7 @@ connectDB();
 app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/leaves', leaveRoutes);
+app.use('/api/notices', noticeRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

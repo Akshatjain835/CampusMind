@@ -6,6 +6,7 @@ from app.graphs.department_graph import department_graph, DepartmentState
 from app.rag.qdrant_ingester import ingest_to_qdrant
 from app.rag.qdrant_retriever import search_qdrant_regulations
 from app.agents.leave_agent import evaluate_leave_request
+from app.agents.notice_agent import generate_academic_notice
 
 app = FastAPI(
     title="DepartmentAI FastAPI Microservice",
@@ -106,5 +107,28 @@ def execute_agent_workflow(request: QueryRequest):
             "agent_chain": result_state.get("agent_chain", []),
             "final_response": result_state.get("final_response", "No response generated.")
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class NoticeGenerationRequest(BaseModel):
+    prompt: str
+    category: Optional[str] = "Academic"
+    target_audience: Optional[str] = "All"
+    department: Optional[str] = "Computer Science & Engineering"
+    author_name: Optional[str] = "Head of Department"
+    author_role: Optional[str] = "HOD"
+
+@app.post("/api/ai/generate-notice")
+def generate_notice_endpoint(request: NoticeGenerationRequest):
+    """Generates an official academic circular from prompt using Notice Agent."""
+    try:
+        return generate_academic_notice(
+            prompt=request.prompt,
+            category=request.category,
+            target_audience=request.target_audience,
+            department=request.department,
+            author_name=request.author_name,
+            author_role=request.author_role
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
