@@ -8,6 +8,7 @@ from app.rag.qdrant_retriever import search_qdrant_regulations
 from app.agents.leave_agent import evaluate_leave_request
 from app.agents.notice_agent import generate_academic_notice
 from app.agents.timetable_agent import generate_conflict_free_timetable
+from app.agents.meeting_agent import schedule_meeting_agent
 
 app = FastAPI(
     title="DepartmentAI FastAPI Microservice",
@@ -151,6 +152,33 @@ def generate_timetable_endpoint(request: TimetableGenerationRequest):
             section=request.section,
             courses=request.courses,
             lab_rooms=request.lab_rooms
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class MeetingScheduleRequest(BaseModel):
+    title: str
+    date: str
+    time_slot: Optional[str] = "11:00 AM - 12:00 PM"
+    department: Optional[str] = "Computer Science & Engineering"
+    priority: Optional[str] = "Normal"
+    organizer_name: Optional[str] = "HOD"
+    organizer_role: Optional[str] = "HOD"
+    participants: Optional[list] = None
+
+@app.post("/api/ai/schedule-meeting")
+def schedule_meeting_endpoint(request: MeetingScheduleRequest):
+    """Schedules a department meeting using LangGraph Meeting Agent workflow."""
+    try:
+        return schedule_meeting_agent(
+            title=request.title,
+            date=request.date,
+            time_slot=request.time_slot,
+            department=request.department,
+            priority=request.priority,
+            organizer_name=request.organizer_name,
+            organizer_role=request.organizer_role,
+            participants=request.participants
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
