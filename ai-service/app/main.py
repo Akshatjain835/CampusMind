@@ -7,6 +7,7 @@ from app.rag.qdrant_ingester import ingest_to_qdrant
 from app.rag.qdrant_retriever import search_qdrant_regulations
 from app.agents.leave_agent import evaluate_leave_request
 from app.agents.notice_agent import generate_academic_notice
+from app.agents.timetable_agent import generate_conflict_free_timetable
 
 app = FastAPI(
     title="DepartmentAI FastAPI Microservice",
@@ -129,6 +130,27 @@ def generate_notice_endpoint(request: NoticeGenerationRequest):
             department=request.department,
             author_name=request.author_name,
             author_role=request.author_role
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class TimetableGenerationRequest(BaseModel):
+    department: Optional[str] = "Computer Science & Engineering"
+    semester: Optional[str] = "6th Semester"
+    section: Optional[str] = "Section A"
+    courses: Optional[list] = None
+    lab_rooms: Optional[list] = None
+
+@app.post("/api/ai/generate-timetable")
+def generate_timetable_endpoint(request: TimetableGenerationRequest):
+    """Generates a conflict-free weekly schedule using Timetable Agent."""
+    try:
+        return generate_conflict_free_timetable(
+            department=request.department,
+            semester=request.semester,
+            section=request.section,
+            courses=request.courses,
+            lab_rooms=request.lab_rooms
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

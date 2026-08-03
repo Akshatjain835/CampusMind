@@ -6,6 +6,7 @@ import authRoutes from './routes/authRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import leaveRoutes from './routes/leaveRoutes.js';
 import noticeRoutes from './routes/noticeRoutes.js';
+import timetableRoutes from './routes/timetableRoutes.js';
 
 dotenv.config();
 
@@ -26,6 +27,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/leaves', leaveRoutes);
 app.use('/api/notices', noticeRoutes);
+app.use('/api/timetable', timetableRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
