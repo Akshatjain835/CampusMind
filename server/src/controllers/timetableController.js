@@ -86,3 +86,18 @@ export const getTimetable = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// @desc    Delete timetable for a department/semester/section
+// @route   DELETE /api/timetable
+// @access  Private (HOD/Admin)
+export const deleteTimetable = async (req, res) => {
+  try {
+    const department = req.user.department || 'Computer Science & Engineering';
+    const { semester, section } = req.query;
+
+    await Timetable.deleteMany({ department, semester, section });
+    res.json({ message: 'Timetable schedule cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

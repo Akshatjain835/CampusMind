@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { LeaveManagement } from './LeaveManagement';
 import { FacultyApprovalPortal } from './FacultyApprovalPortal';
 import { NoticeBoard } from './NoticeBoard';
+import { TimetableGrid } from './TimetableGrid';
 import {
   Bot, LogOut, Calendar, Clock, FileText, CheckSquare,
   Users, Layers, Award, Sparkles, Send, ShieldAlert,
@@ -324,6 +325,9 @@ export const Dashboard = () => {
 
         {/* Department Circulars & Notice Board */}
         <NoticeBoard />
+
+        {/* Weekly Interactive Timetable Grid */}
+        <TimetableGrid />
 
         {/* Modules Grid */}
         <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '20px' }}>Governance & Management Modules</h3>
