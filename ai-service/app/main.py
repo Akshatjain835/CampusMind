@@ -9,6 +9,7 @@ from app.agents.leave_agent import evaluate_leave_request
 from app.agents.notice_agent import generate_academic_notice
 from app.agents.timetable_agent import generate_conflict_free_timetable
 from app.agents.meeting_agent import schedule_meeting_agent
+from app.agents.analytics_agent import generate_executive_analytics_summary
 
 app = FastAPI(
     title="DepartmentAI FastAPI Microservice",
@@ -179,6 +180,31 @@ def schedule_meeting_endpoint(request: MeetingScheduleRequest):
             organizer_name=request.organizer_name,
             organizer_role=request.organizer_role,
             participants=request.participants
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class AnalyticsSummaryRequest(BaseModel):
+    department: Optional[str] = "Computer Science & Engineering"
+    user_name: Optional[str] = "HOD"
+    user_role: Optional[str] = "HOD"
+    attendance_rate: Optional[float] = 81.4
+    avg_workload: Optional[float] = 18.5
+    naac_score: Optional[int] = 88
+    papers_count: Optional[int] = 24
+
+@app.post("/api/ai/analytics-summary")
+def analytics_summary_endpoint(request: AnalyticsSummaryRequest):
+    """Generates an executive performance summary using Analytics Agent."""
+    try:
+        return generate_executive_analytics_summary(
+            department=request.department,
+            user_name=request.user_name,
+            user_role=request.user_role,
+            attendance_rate=request.attendance_rate,
+            avg_workload=request.avg_workload,
+            naac_score=request.naac_score,
+            papers_count=request.papers_count
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

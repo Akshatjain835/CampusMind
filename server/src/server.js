@@ -8,6 +8,7 @@ import leaveRoutes from './routes/leaveRoutes.js';
 import noticeRoutes from './routes/noticeRoutes.js';
 import timetableRoutes from './routes/timetableRoutes.js';
 import meetingRoutes from './routes/meetingRoutes.js';
+import analyticsRoutes from './routes/analyticsRoutes.js';
 
 dotenv.config();
 
@@ -30,6 +31,7 @@ app.use('/api/leaves', leaveRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/timetable', timetableRoutes);
 app.use('/api/meetings', meetingRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
