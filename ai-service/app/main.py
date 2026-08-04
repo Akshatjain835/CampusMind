@@ -29,6 +29,7 @@ class QueryRequest(BaseModel):
     user_name: str = "Rahul Sharma"
     user_role: str = "student"
     query: str
+    thread_id: Optional[str] = "default_session"
 
 class SearchRequest(BaseModel):
     query: str
@@ -102,7 +103,11 @@ def execute_agent_workflow(request: QueryRequest):
             "final_response": None
         }
         
-        result_state = department_graph.invoke(initial_state)
+        session_thread_id = request.thread_id or "default_session"
+        result_state = department_graph.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": session_thread_id}}
+        )
         
         return {
             "query": request.query,

@@ -25,6 +25,32 @@ export const Dashboard = () => {
     }
   ]);
 
+  // Fetch persistent chat history on login
+  React.useEffect(() => {
+    const fetchChatHistory = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('/api/ai/chat-history', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const history = await res.json();
+          if (history && history.length > 0) {
+            setChatLogs(history.map(msg => ({
+              sender: msg.sender,
+              role: msg.role,
+              text: msg.text
+            })));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch chat history:', err);
+      }
+    };
+    fetchChatHistory();
+  }, [user]);
+
   const getRoleBadgeClass = (role) => {
     switch (role) {
       case 'student': return 'badge-role badge-student';
@@ -48,9 +74,13 @@ export const Dashboard = () => {
     ]);
 
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch('/api/ai/query', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({
           query: userText,
           user_name: user?.name || 'User',
@@ -64,8 +94,8 @@ export const Dashboard = () => {
           ...prev,
           {
             sender: 'agent',
-            role: `LangGraph Agent (${data.agent_chain ? data.agent_chain.join(' → ') : 'Router'})`,
-            text: data.final_response || 'No response returned.'
+            role: data.role || 'LangGraph AI Agent',
+            text: data.text || data.final_response || 'No response returned.'
           }
         ]);
       } else {

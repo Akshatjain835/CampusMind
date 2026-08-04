@@ -125,4 +125,7 @@ builder.add_edge("faculty_agent", "response_generator")
 builder.add_edge("rag_agent", "response_generator")
 builder.add_edge("response_generator", END)
 
-department_graph = builder.compile()
+from langgraph.checkpoint.memory import MemorySaver
+
+memory_saver = MemorySaver()
+department_graph = builder.compile(checkpointer=memory_saver)
