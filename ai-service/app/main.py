@@ -28,6 +28,7 @@ app.add_middleware(
 class QueryRequest(BaseModel):
     user_name: str = "Rahul Sharma"
     user_role: str = "student"
+    department: Optional[str] = "Computer Science & Engineering"
     query: str
     thread_id: Optional[str] = "default_session"
 
@@ -103,7 +104,8 @@ def execute_agent_workflow(request: QueryRequest):
             "final_response": None
         }
         
-        session_thread_id = request.thread_id or "default_session"
+        dept_key = (request.department or "CSE").replace(" ", "_")
+        session_thread_id = f"{dept_key}_{request.user_role}_{request.thread_id or 'default'}"
         result_state = department_graph.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_thread_id}}

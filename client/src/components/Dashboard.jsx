@@ -117,6 +117,25 @@ export const Dashboard = () => {
           text: `Processing query "${userText}"... AI Service gateway endpoint ready.`
         }
       ]);
+  const handleClearChatHistory = async () => {
+    if (!window.confirm('Are you sure you want to clear your chat history?')) return;
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/ai/chat-history', {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setChatLogs([
+          {
+            sender: 'agent',
+            role: 'Router & RAG Agent',
+            text: `Hello ${user?.name || 'User'}! I am your DepartmentAI Academic Secretary. How can I assist you today? You can ask me about attendance rules, apply for leaves, schedule meetings, or query NBA/NAAC accreditation manuals.`
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error('Failed to clear chat history:', err);
     }
   };
 
@@ -296,9 +315,22 @@ export const Dashboard = () => {
         {/* AI Assistant Drawer Section */}
         {aiChatOpen && (
           <div className="glass-panel animate-fade-in" style={{ padding: '24px', marginBottom: '32px', borderColor: 'var(--border-glow)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <Bot size={22} color="#818cf8" />
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>DepartmentAI Secretary Agent (LangGraph Workflow)</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <Bot size={22} color="#818cf8" />
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>DepartmentAI Secretary Agent (LangGraph Workflow)</h3>
+                <span style={{ fontSize: '0.72rem', padding: '2px 8px', borderRadius: '10px', background: 'rgba(52, 211, 153, 0.15)', color: '#34d399', fontWeight: 700, border: '1px solid rgba(52, 211, 153, 0.3)' }}>
+                  🧠 MEMORY ACTIVE
+                </span>
+              </div>
+
+              <button 
+                onClick={handleClearChatHistory} 
+                className="btn btn-secondary" 
+                style={{ padding: '4px 12px', fontSize: '0.78rem', color: '#f43f5e' }}
+              >
+                Clear History
+              </button>
             </div>
 
             {/* Chat Messages */}

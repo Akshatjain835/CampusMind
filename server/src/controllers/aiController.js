@@ -18,6 +18,18 @@ export const getChatHistory = async (req, res) => {
   }
 };
 
+// @desc    Clear user's persistent chat history
+// @route   DELETE /api/ai/chat-history
+// @access  Private
+export const clearChatHistory = async (req, res) => {
+  try {
+    await ChatMessage.deleteMany({ user: req.user._id });
+    res.json({ message: 'Chat history cleared successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Send query to LangGraph AI Agent & save chat history
 // @route   POST /api/ai/query
 // @access  Private
