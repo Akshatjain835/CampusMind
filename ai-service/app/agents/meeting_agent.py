@@ -1,6 +1,8 @@
+import os
+import random
 from typing import TypedDict, List, Optional
 from langgraph.graph import StateGraph, END
-import random
+from app.agents.llm_factory import get_llm
 
 class MeetingState(TypedDict):
     title: str
@@ -50,10 +52,20 @@ def room_allocation_node(state: MeetingState) -> MeetingState:
     return state
 
 def agenda_generation_node(state: MeetingState) -> MeetingState:
-    """Node 3: Generates structured agenda using AI logic."""
+    """Node 3: Generates structured agenda using Google Gemini LLM."""
     title = state.get("title", "Department Meeting")
     dept = state.get("department", "CSE")
     
+    llm = get_llm()
+    if llm:
+        try:
+            prompt = f"Draft a concise 5-point formal academic meeting agenda for a meeting titled '{title}' in the '{dept}' department."
+            response = llm.invoke(prompt)
+            state["agenda"] = response.content
+            return state
+        except Exception as err:
+            print(f"[Meeting LLM Error]: {err}")
+
     agenda = (
         f"1. Opening Remarks & Department Progress Review ({dept})\n"
         f"2. Core Discussion: {title}\n"
@@ -61,18 +73,31 @@ def agenda_generation_node(state: MeetingState) -> MeetingState:
         f"4. NBA / NAAC Accreditation Compliance Audit\n"
         f"5. Action Items & Q&A Session"
     )
-    
     state["agenda"] = agenda
     return state
 
 def invitation_formulator_node(state: MeetingState) -> MeetingState:
-    """Node 4: Formats formal email invitation and notification payload."""
+    """Node 4: Formats formal email invitation using Google Gemini LLM."""
     title = state.get("title", "Meeting")
     date = state.get("date", "Today")
     slot = state.get("recommended_time_slot", "11:00 AM")
     room = state.get("allocated_room", "Conference Room 1")
     organizer = state.get("organizer_name", "HOD")
     dept = state.get("department", "CSE")
+
+    llm = get_llm()
+    if llm:
+        try:
+            prompt = (
+                f"Write a formal academic email meeting invitation.\n"
+                f"Title: {title}\nDepartment: {dept}\nDate: {date}\nTime: {slot}\nVenue: {room}\nOrganizer: {organizer}\n"
+                f"Agenda: {state.get('agenda')}"
+            )
+            response = llm.invoke(prompt)
+            state["invitation_text"] = response.content
+            return state
+        except Exception as err:
+            print(f"[Meeting LLM Error]: {err}")
 
     invitation = (
         f"OFFICIAL MEETING INVITATION & CALENDAR REMINDER\n\n"

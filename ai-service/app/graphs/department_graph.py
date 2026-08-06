@@ -1,5 +1,7 @@
+import os
 from typing import Dict, Any, List, TypedDict, Optional
 from langgraph.graph import StateGraph, END
+from app.agents.llm_factory import get_llm
 from app.rag.qdrant_retriever import search_qdrant_regulations
 
 class DepartmentState(TypedDict):
@@ -156,7 +158,29 @@ def response_generator_node(state: DepartmentState) -> DepartmentState:
     chain = state.get("agent_chain", [])
     chain.append("Response Generator")
     
+    query = state.get("query", "")
     context = state.get("context", "How can I assist you with your academic inquiries today?")
+    user_name = state.get("user_name", "Student")
+    user_role = state.get("user_role", "student")
+
+    llm = get_llm()
+    if llm:
+        try:
+            prompt = (
+                f"You are the Department AI Secretary Agent for CampusMind AI.\n"
+                f"User: {user_name} (Role: {user_role})\n"
+                f"User Question: '{query}'\n"
+                f"Retrieved Facts / Context:\n{context}\n\n"
+                f"Draft a helpful, polite, professional response answering the user directly based on the context. Do not repeat debug traces."
+            )
+            response = llm.invoke(prompt)
+            return {
+                **state,
+                "final_response": response.content,
+                "agent_chain": chain
+            }
+        except Exception as err:
+            print(f"[Dept Graph LLM Error]: {err}")
     
     return {
         **state,

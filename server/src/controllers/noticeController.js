@@ -31,16 +31,48 @@ export const generateAiNotice = async (req, res) => {
 
     res.json(aiRes.data);
   } catch (error) {
-    console.error('AI Notice Generation error:', error.message);
-    // Fallback if AI microservice is offline
+    console.error('AI Notice Generation fallback:', error.message);
     const dept = req.user.department || 'Computer Science & Engineering';
-    const circNo = `Ref: DEPT/${dept.substring(0, 3).toUpperCase()}/2026/CIRC-${Math.floor(100 + Math.random() * 900)}`;
+    const userPrompt = (req.body.prompt || 'Departmental Announcement').trim();
+    const circNo = `Ref: ${dept.split(' ').map(w=>w[0]).join('').substring(0,4).toUpperCase()}/2026/CIRC-${Math.floor(100 + Math.random() * 900)}`;
+    const category = req.body.category || 'Academic';
+    const targetAudience = req.body.targetAudience || 'All';
+    const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+    const promptSentences = userPrompt.split('.').map(s => s.trim()).filter(Boolean);
+    const mainTitle = promptSentences[0] || userPrompt;
+    const directives = promptSentences.length > 1 ? promptSentences.slice(1) : [
+      'All concerned individuals are requested to strictly adhere to the schedule/instructions specified above.',
+      'Attendance and active participation are mandatory under departmental academic regulations.',
+      'For any queries, please reach out to the Departmental Coordination Committee.'
+    ];
+
+    const directivesText = directives.map((d, i) => `  ${i + 1}. ${d.endsWith('.') ? d : d + '.'}`).join('\n');
+
+    const formattedContent = 
+      `🏛️ OFFICIAL ACADEMIC CIRCULAR & NOTICE\n` +
+      `${circNo}\n` +
+      `Date: ${todayStr}\n\n` +
+      `DEPARTMENT OF ${dept.toUpperCase()}\n` +
+      `Category: ${category} | Target Audience: ${targetAudience}\n\n` +
+      `📌 SUBJECT: ${mainTitle.toUpperCase()}\n\n` +
+      `Dear ${targetAudience},\n\n` +
+      `This is an official departmental communication regarding: ${mainTitle}.\n\n` +
+      `📋 KEY DIRECTIVES & ACTION REQUIRED:\n` +
+      `${directivesText}\n\n` +
+      `⚠️ COMPLIANCE NOTE:\n` +
+      `Strict compliance with the guidelines above is mandatory for all ${targetAudience.toLowerCase()} as per NAAC/NBA academic governance rules.\n\n` +
+      `By Order & Authorization,\n\n` +
+      `✍️ ${req.user.name}\n` +
+      `${(req.user.role || 'HOD').toUpperCase()} | Department of ${dept}\n` +
+      `CampusMind AI Administrative Governance Portal`;
+
     res.json({
-      title: req.body.prompt || 'Department Circular',
+      title: mainTitle.length > 75 ? mainTitle.substring(0, 75) + '...' : mainTitle,
       circularNumber: circNo,
-      content: `OFFICIAL CIRCULAR\n${circNo}\nDate: ${new Date().toLocaleDateString()}\n\nSubject: ${req.body.prompt}\n\nThis is an official departmental announcement regarding ${req.body.prompt}. All concerned students and faculty members are requested to take note.\n\nBy Order,\n${req.user.name}\n${req.user.role?.toUpperCase() || 'HOD'}, ${dept}`,
-      category: req.body.category || 'Academic',
-      targetAudience: req.body.targetAudience || 'All'
+      content: formattedContent,
+      category,
+      targetAudience
     });
   }
 };
