@@ -6,6 +6,8 @@ import {
   Trash2, RefreshCw, Layers, MapPin, CheckCircle2 
 } from 'lucide-react';
 
+const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+
 const DEPARTMENT_SECTIONS = {
   'Computer Science & Engineering': ['Section A', 'Section B', 'Section C', 'Section D'],
   'Information Technology': ['Section IT-1', 'Section IT-2'],

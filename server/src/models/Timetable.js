@@ -24,7 +24,7 @@ const slotSchema = new mongoose.Schema({
   },
   room: {
     type: String,
-    required: true // e.g. "Lab 101" or "LH-204"
+    default: 'Room 101'
   },
   type: {
     type: String,

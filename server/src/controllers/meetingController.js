@@ -1,5 +1,6 @@
 import Meeting from '../models/Meeting.js';
 import axios from 'axios';
+import { createNotificationHelper } from './notificationController.js';
 import { sendMeetingEmail } from '../utils/sendEmail.js';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
@@ -79,6 +80,15 @@ export const createMeeting = async (req, res) => {
       agenda,
       invitationText,
       status: 'Scheduled'
+    });
+
+    // Auto-create notification for department faculty
+    await createNotificationHelper({
+      department,
+      targetRole: 'faculty',
+      title: `AI Meeting Scheduled: ${title}`,
+      message: `Meeting scheduled on ${meetingDate} (${timeSlot || '11:00 AM'}) at ${room}. Agenda: ${agenda}`,
+      type: 'meeting'
     });
 
     // Extract emails from participants or fallback to department email distribution list

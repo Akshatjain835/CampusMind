@@ -1,5 +1,6 @@
 import Notice from '../models/Notice.js';
 import axios from 'axios';
+import { createNotificationHelper } from './notificationController.js';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
@@ -68,6 +69,15 @@ export const createNotice = async (req, res) => {
       author: req.user._id,
       authorName: req.user.name,
       authorRole: req.user.role
+    });
+
+    // Auto-create notification for department
+    await createNotificationHelper({
+      department: dept,
+      targetRole: (targetAudience || 'all').toLowerCase(),
+      title: `Notice Circular: ${title}`,
+      message: `Official circular ${generatedCircNo} has been published for ${targetAudience} under ${category}.`,
+      type: 'notice'
     });
 
     res.status(201).json(notice);

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Send, Sparkles, AlertCircle, CheckCircle2, FileText, Calendar } from 'lucide-react';
 
 export const LeaveModal = ({ isOpen, onClose, onLeaveApplied }) => {
@@ -55,7 +56,7 @@ export const LeaveModal = ({ isOpen, onClose, onLeaveApplied }) => {
     }
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0,
@@ -64,7 +65,7 @@ export const LeaveModal = ({ isOpen, onClose, onLeaveApplied }) => {
       bottom: 0,
       background: 'rgba(0, 0, 0, 0.75)',
       backdropFilter: 'blur(8px)',
-      zIndex: 1000,
+      zIndex: 9999,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -158,7 +159,7 @@ export const LeaveModal = ({ isOpen, onClose, onLeaveApplied }) => {
                 value={leaveType}
                 onChange={(e) => setLeaveType(e.target.value)}
               >
-                <option value="Medical">Medical Leave (Requires Cert if >3 days)</option>
+                <option value="Medical">Medical Leave (Requires Cert if over 3 days)</option>
                 <option value="Casual">Casual Leave</option>
                 <option value="Duty">Duty Leave (Hackathon / Placement / Sports)</option>
                 <option value="Academic">Academic Leave</option>
@@ -213,6 +214,7 @@ export const LeaveModal = ({ isOpen, onClose, onLeaveApplied }) => {
         )}
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

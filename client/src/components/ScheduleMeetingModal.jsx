@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Sparkles, Calendar, Clock, MapPin, Users, Send, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export const ScheduleMeetingModal = ({ isOpen, onClose, onMeetingScheduled }) => {
@@ -100,7 +101,7 @@ export const ScheduleMeetingModal = ({ isOpen, onClose, onMeetingScheduled }) =>
     }
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0,
@@ -112,13 +113,13 @@ export const ScheduleMeetingModal = ({ isOpen, onClose, onMeetingScheduled }) =>
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
+      zIndex: 9999,
       padding: '20px'
     }}>
       <div className="glass-panel animate-scale-in" style={{
         maxWidth: '680px',
         width: '100%',
-        maxHeight: '90vh',
+        maxHeight: '85vh',
         overflowY: 'auto',
         padding: '28px',
         position: 'relative'
@@ -281,6 +282,7 @@ export const ScheduleMeetingModal = ({ isOpen, onClose, onMeetingScheduled }) =>
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

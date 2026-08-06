@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAuth } from '../context/AuthContext';
 import { Sparkles, Calendar, CheckCircle2, AlertCircle, X, Send, Cpu } from 'lucide-react';
 
@@ -153,7 +154,7 @@ export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) =
     }
   };
 
-  return (
+  return createPortal(
     <div style={{
       position: 'fixed',
       top: 0,
@@ -165,16 +166,21 @@ export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) =
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      zIndex: 1000,
+      zIndex: 9999,
       padding: '20px'
     }}>
       <div className="glass-panel animate-scale-in" style={{
         maxWidth: '720px',
         width: '100%',
-        maxHeight: '90vh',
+        maxHeight: '85vh',
         overflowY: 'auto',
         padding: '28px',
-        position: 'relative'
+        position: 'relative',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px',
+        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+        border: '1px solid rgba(129, 140, 248, 0.4)'
       }}>
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -290,7 +296,7 @@ export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) =
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <CheckCircle2 size={18} color="#34d399" />
                 <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#34d399' }}>
-                  {aiResult.conflictStatus || 'Zero Conflicts Detected'}
+                  {aiResult.constraintStatus || aiResult.conflictStatus || 'Zero Conflicts Detected'}
                 </span>
               </div>
               <span style={{ fontSize: '0.75rem', padding: '2px 10px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', fontWeight: 600 }}>
@@ -326,23 +332,40 @@ export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) =
                   </div>
                   <div style={{ textAlign: 'right', color: 'var(--text-dim)' }}>
                     <div>👨‍🏫 {slot.facultyName}</div>
-                    <div style={{ fontWeight: 600, color: '#fbbf24' }}>🏫 {slot.room}</div>
+                    <div style={{ fontWeight: 600, color: '#fbbf24' }}>🏫 {slot.room || slot.roomNumber || 'Room 101'}</div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '16px', justifyContent: 'flex-end' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: '12px', 
+              marginTop: '16px', 
+              justify: 'flex-end',
+              position: 'sticky',
+              bottom: 0,
+              background: 'rgba(15, 23, 42, 0.95)',
+              padding: '12px 0 4px 0',
+              backdropFilter: 'blur(8px)',
+              borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+              zIndex: 10
+            }}>
               <button onClick={() => setAiResult(null)} className="btn btn-secondary">
                 Discard
               </button>
-              <button onClick={handlePublishTimetable} className="btn btn-primary" disabled={loading}>
+              <button onClick={handlePublishTimetable} className="btn btn-primary" disabled={loading} style={{
+                background: 'linear-gradient(135deg, #6366f1 0%, #38bdf8 100%)',
+                fontWeight: 700,
+                boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)'
+              }}>
                 <Send size={16} /> Publish Timetable to MongoDB
               </button>
             </div>
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
