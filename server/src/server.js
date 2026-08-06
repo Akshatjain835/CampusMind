@@ -45,8 +45,26 @@ app.get('/api/health', (req, res) => {
 });
 
 // 404 Route Handler
-app.use((req, res) => {
+app.use((req, res, next) => {
   res.status(404).json({ message: `Route ${req.originalUrl} not found` });
+});
+
+// Global Centralized Express Error Handler Middleware
+app.use((err, req, res, next) => {
+  console.error('[Unhandled Express Error]:', err.stack || err.message || err);
+  res.status(err.status || 500).json({
+    message: err.message || 'An unexpected server error occurred',
+    error: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
+// Process Level Exception Safety Net
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Unhandled Promise Rejection]:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('[Uncaught Exception]:', err);
 });
 
 let PORT = parseInt(process.env.PORT, 10) || 5000;

@@ -34,7 +34,7 @@ export const generateAiNotice = async (req, res) => {
     console.error('AI Notice Generation fallback:', error.message);
     const dept = req.user.department || 'Computer Science & Engineering';
     const userPrompt = (req.body.prompt || 'Departmental Announcement').trim();
-    const circNo = `Ref: ${dept.split(' ').map(w=>w[0]).join('').substring(0,4).toUpperCase()}/2026/CIRC-${Math.floor(100 + Math.random() * 900)}`;
+    const circNo = `Ref: ${dept.split(' ').map(w => w[0]).join('').substring(0, 4).toUpperCase()}/2026/CIRC-${Math.floor(100 + Math.random() * 900)}`;
     const category = req.body.category || 'Academic';
     const targetAudience = req.body.targetAudience || 'All';
     const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
@@ -49,7 +49,7 @@ export const generateAiNotice = async (req, res) => {
 
     const directivesText = directives.map((d, i) => `  ${i + 1}. ${d.endsWith('.') ? d : d + '.'}`).join('\n');
 
-    const formattedContent = 
+    const formattedContent =
       `🏛️ OFFICIAL ACADEMIC CIRCULAR & NOTICE\n` +
       `${circNo}\n` +
       `Date: ${todayStr}\n\n` +

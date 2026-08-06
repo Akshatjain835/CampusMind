@@ -25,6 +25,21 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from fastapi.responses import JSONResponse
+from fastapi import Request
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    print(f"[FastAPI Exception Handler]: {exc}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": True,
+            "message": "An unexpected error occurred in DepartmentAI Microservice",
+            "detail": str(exc)
+        }
+    )
+
 class QueryRequest(BaseModel):
     user_name: str = "Rahul Sharma"
     user_role: str = "student"

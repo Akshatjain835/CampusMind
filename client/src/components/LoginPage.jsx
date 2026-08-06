@@ -345,7 +345,6 @@ export const LoginPage = () => {
                     <option value="student">Student</option>
                     <option value="faculty">Faculty Member</option>
                     <option value="hod">Head of Department (HOD)</option>
-                    <option value="admin">System Administrator</option>
                   </select>
                 </div>
 

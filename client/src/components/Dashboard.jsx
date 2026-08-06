@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Navbar } from './Navbar';
 import { LeaveManagement } from './LeaveManagement';
+import { LeaveModal } from './LeaveModal';
+import { StudentAttendanceModal } from './StudentAttendanceModal';
+import { EnrolledCoursesModal } from './EnrolledCoursesModal';
 import { FacultyApprovalPortal } from './FacultyApprovalPortal';
 import { NoticeBoard } from './NoticeBoard';
 import { TimetableGrid } from './TimetableGrid';
@@ -17,6 +20,9 @@ export const Dashboard = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [showAttendanceModal, setShowAttendanceModal] = useState(false);
+  const [showCoursesModal, setShowCoursesModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatLogs, setChatLogs] = useState([
     {
@@ -186,40 +192,75 @@ export const Dashboard = () => {
 
           {user?.role === 'student' && (
             <>
-              <div className="glass-card">
+              <div 
+                className="glass-card hover:border-emerald-500/50 transition-all duration-200" 
+                onClick={() => setShowAttendanceModal(true)}
+                style={{ cursor: 'pointer', position: 'relative' }}
+                title="Click to view subject-wise attendance & AI predictor"
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Overall Attendance</span>
                   <TrendingUp size={20} color="#34d399" />
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-emerald)' }}>84.5%</div>
-                <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Eligible for End-Sem Exam</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Eligible for End-Sem Exam</span>
+                  <span style={{ fontSize: '0.7rem', color: '#34d399', fontWeight: 700 }}>View Breakdown ➔</span>
+                </div>
               </div>
 
-              <div className="glass-card">
+              <div 
+                className="glass-card hover:border-cyan-500/50 transition-all duration-200" 
+                onClick={() => setShowCoursesModal(true)}
+                style={{ cursor: 'pointer' }}
+                title="Click to view course curriculum & assigned faculty"
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Enrolled Courses</span>
                   <BookOpen size={20} color="#38bdf8" />
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>6 Subjects</div>
-                <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Current Semester (Sem 6)</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Current Semester (Sem 6)</span>
+                  <span style={{ fontSize: '0.7rem', color: '#38bdf8', fontWeight: 700 }}>View Syllabus ➔</span>
+                </div>
               </div>
 
-              <div className="glass-card">
+              <div 
+                className="glass-card hover:border-amber-500/50 transition-all duration-200" 
+                onClick={() => setShowLeaveModal(true)}
+                style={{ cursor: 'pointer' }}
+                title="Click to apply or track leave requests"
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Leave Applications</span>
                   <Clock size={20} color="#fbbf24" />
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-amber)' }}>1 Pending</div>
-                <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>AI Recommendation: Approve</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>AI Recommendation: Approve</span>
+                  <span style={{ fontSize: '0.7rem', color: '#fbbf24', fontWeight: 700 }}>Apply Leave ➔</span>
+                </div>
               </div>
 
-              <div className="glass-card">
+              <div 
+                className="glass-card hover:border-purple-500/50 transition-all duration-200" 
+                onClick={() => {
+                  const el = document.getElementById('notice-board-section');
+                  if (el) el.scrollIntoView({ behavior: 'smooth' });
+                }}
+                style={{ cursor: 'pointer' }}
+                title="Click to view department notice circulars"
+              >
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                   <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Department Notices</span>
                   <FileText size={20} color="#c084fc" />
                 </div>
                 <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--accent-purple)' }}>3 Unread</div>
-                <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Exam Circular & Workshop</span>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                  <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Exam Circular & Workshop</span>
+                  <span style={{ fontSize: '0.7rem', color: '#c084fc', fontWeight: 700 }}>Read Notices ➔</span>
+                </div>
               </div>
             </>
           )}
@@ -342,7 +383,9 @@ export const Dashboard = () => {
         {user?.role === 'student' ? <LeaveManagement /> : <FacultyApprovalPortal />}
 
         {/* Department Circulars & Notice Board */}
-        <NoticeBoard />
+        <div id="notice-board-section">
+          <NoticeBoard />
+        </div>
 
         {/* Weekly Interactive Timetable Grid */}
         <TimetableGrid />
@@ -357,7 +400,7 @@ export const Dashboard = () => {
         <h3 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '20px' }}>Governance & Management Modules</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
 
-          <div className="glass-card" style={{ cursor: 'pointer' }}>
+          <div className="glass-card" style={{ cursor: 'pointer' }} onClick={() => setShowAttendanceModal(true)}>
             <Calendar size={24} color="#38bdf8" style={{ marginBottom: '12px' }} />
             <h4 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>Attendance & Eligibility</h4>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -365,7 +408,7 @@ export const Dashboard = () => {
             </p>
           </div>
 
-          <div className="glass-card" style={{ cursor: 'pointer' }}>
+          <div className="glass-card" style={{ cursor: 'pointer' }} onClick={() => setShowLeaveModal(true)}>
             <FileText size={24} color="#fbbf24" style={{ marginBottom: '12px' }} />
             <h4 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>Leave Management</h4>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -381,7 +424,7 @@ export const Dashboard = () => {
             </p>
           </div>
 
-          <div className="glass-card" style={{ cursor: 'pointer' }}>
+          <div className="glass-card" style={{ cursor: 'pointer' }} onClick={() => setShowCoursesModal(true)}>
             <BookOpen size={24} color="#c084fc" style={{ marginBottom: '12px' }} />
             <h4 style={{ fontSize: '1.1rem', marginBottom: '6px' }}>RAG Regulation Search</h4>
             <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
@@ -390,6 +433,22 @@ export const Dashboard = () => {
           </div>
 
         </div>
+
+        {/* Interactive Student Modals */}
+        <StudentAttendanceModal 
+          isOpen={showAttendanceModal} 
+          onClose={() => setShowAttendanceModal(false)} 
+          user={user} 
+        />
+        <EnrolledCoursesModal 
+          isOpen={showCoursesModal} 
+          onClose={() => setShowCoursesModal(false)} 
+          user={user} 
+        />
+        <LeaveModal 
+          isOpen={showLeaveModal} 
+          onClose={() => setShowLeaveModal(false)} 
+        />
 
       </main>
     </div>

@@ -101,6 +101,75 @@ export const getMe = async (req, res) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/auth/profile
+// @access  Private
+export const updateProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const { 
+      name, email, password, phone, bio, profilePic, 
+      resumeUrl, githubUrl, linkedinUrl, department, 
+      rollNumber, section, semester, designation, specialization 
+    } = req.body;
+
+    // Normal Editable Details for All Users
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (phone !== undefined) user.phone = phone;
+    if (bio !== undefined) user.bio = bio;
+    if (profilePic !== undefined) user.profilePic = profilePic;
+    if (resumeUrl !== undefined) user.resumeUrl = resumeUrl;
+    if (githubUrl !== undefined) user.githubUrl = githubUrl;
+    if (linkedinUrl !== undefined) user.linkedinUrl = linkedinUrl;
+
+    // Password Update
+    if (password && password.trim() !== '') {
+      const salt = await bcrypt.genSalt(10);
+      user.password = await bcrypt.hash(password, salt);
+    }
+
+    // Critical Academic Governance Details (ONLY editable by Faculty/HOD/Admin, NOT students)
+    if (user.role !== 'student') {
+      if (department) user.department = department;
+      if (rollNumber) user.rollNumber = rollNumber;
+      if (section) user.section = section;
+      if (semester) user.semester = semester;
+      if (designation) user.designation = designation;
+      if (specialization) user.specialization = specialization;
+    }
+
+    const updatedUser = await user.save();
+
+    res.json({
+      _id: updatedUser._id,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      department: updatedUser.department,
+      rollNumber: updatedUser.rollNumber,
+      section: updatedUser.section,
+      semester: updatedUser.semester,
+      designation: updatedUser.designation,
+      specialization: updatedUser.specialization,
+      phone: updatedUser.phone,
+      bio: updatedUser.bio,
+      profilePic: updatedUser.profilePic,
+      resumeUrl: updatedUser.resumeUrl,
+      githubUrl: updatedUser.githubUrl,
+      linkedinUrl: updatedUser.linkedinUrl,
+      token: generateToken(updatedUser._id)
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Seed default accounts for testing (Student, Faculty, HOD, Admin)
 // @route   POST /api/auth/seed
 export const seedUsers = async (req, res) => {

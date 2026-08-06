@@ -1,6 +1,7 @@
 import LeaveRequest from '../models/LeaveRequest.js';
 import Attendance from '../models/Attendance.js';
 import User from '../models/User.js';
+import { createNotificationHelper } from './notificationController.js';
 import axios from 'axios';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
@@ -91,6 +92,16 @@ export const applyLeave = async (req, res) => {
     });
 
     const populatedLeave = await LeaveRequest.findById(leaveRequest._id).populate('applicant', 'name email rollNumber department designation');
+
+    // Auto-trigger notification alert for Department HODs
+    const dept = req.user.department || 'Computer Science & Engineering';
+    await createNotificationHelper({
+      department: dept,
+      targetRole: 'hod',
+      title: `New Leave Application: ${req.user.name}`,
+      message: `${req.user.name} (${applicantRole}) has applied for ${leaveType} leave from ${new Date(startDate).toLocaleDateString()} to ${new Date(endDate).toLocaleDateString()}. AI Recommendation: ${aiRecommendation.recommendedStatus}`,
+      type: 'leave'
+    });
 
     res.status(201).json(populatedLeave);
   } catch (error) {
@@ -226,6 +237,16 @@ export const reviewLeave = async (req, res) => {
     const updatedLeave = await LeaveRequest.findById(leave._id)
       .populate('applicant', 'name email rollNumber department')
       .populate('reviewedBy', 'name designation role');
+
+    // Auto-trigger notification alert specifically for the applicant student/faculty
+    await createNotificationHelper({
+      department: studentDepartment,
+      targetRole: applicantRole,
+      recipient: leave.applicant._id,
+      title: `Leave Application ${status}`,
+      message: `Your ${leave.leaveType} leave request from ${new Date(leave.startDate).toLocaleDateString()} has been ${status.toLowerCase()} by ${req.user.name} (${req.user.role?.toUpperCase()}).`,
+      type: 'leave'
+    });
 
     res.json(updatedLeave);
   } catch (error) {

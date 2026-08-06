@@ -84,13 +84,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const updateUserProfile = async (updatedFields) => {
+    setError(null);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/auth/profile', {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(updatedFields)
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Profile update failed');
+      }
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+      setUser(prev => ({ ...prev, ...data }));
+      return data;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, seedDemoData, logout }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, updateUserProfile, seedDemoData, logout }}>
       {children}
     </AuthContext.Provider>
   );

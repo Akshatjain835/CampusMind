@@ -18,7 +18,14 @@ const userSchema = new mongoose.Schema({
   designation: { type: String },
   specialization: { type: String },
   workloadHours: { type: Number, default: 0 },
-  avatar: { type: String }
+  avatar: { type: String },
+  // Extended Student Profile & Resume Fields
+  phone: { type: String },
+  bio: { type: String },
+  profilePic: { type: String },
+  resumeUrl: { type: String },
+  githubUrl: { type: String },
+  linkedinUrl: { type: String }
 }, { timestamps: true });
 
 export default mongoose.model('User', userSchema);

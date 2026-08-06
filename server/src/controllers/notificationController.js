@@ -9,17 +9,24 @@ export const getNotifications = async (req, res) => {
     const userRole = req.user.role || 'student';
     const userId = req.user._id;
 
-    // Fetch notifications matching department and targetRole or specific recipient
+    // Strict Notification Isolation Filter:
+    // 1. If recipient is set, MUST match the logged-in user's ID.
+    // 2. If recipient is null (broadcast), matches department and targetRole ('all' or userRole).
     const notifications = await Notification.find({
       department,
       $or: [
         { recipient: userId },
-        { targetRole: 'all' },
-        { targetRole: userRole }
+        {
+          recipient: null,
+          $or: [
+            { targetRole: 'all' },
+            { targetRole: userRole }
+          ]
+        }
       ]
     })
     .sort({ createdAt: -1 })
-    .limit(20);
+    .limit(25);
 
     // Compute read status per user
     const formatted = notifications.map(n => ({
@@ -28,7 +35,7 @@ export const getNotifications = async (req, res) => {
       message: n.message,
       type: n.type,
       createdAt: n.createdAt,
-      isRead: n.isRead || (n.readBy && n.readBy.includes(userId))
+      isRead: n.isRead || (n.readBy && n.readBy.some(id => id.toString() === userId.toString()))
     }));
 
     res.json(formatted);
@@ -43,10 +50,17 @@ export const getNotifications = async (req, res) => {
 export const markAllAsRead = async (req, res) => {
   try {
     const userId = req.user._id;
+    const userRole = req.user.role || 'student';
     const department = req.user.department || 'Computer Science & Engineering';
 
     await Notification.updateMany(
-      { department },
+      {
+        department,
+        $or: [
+          { recipient: userId },
+          { recipient: null, targetRole: { $in: ['all', userRole] } }
+        ]
+      },
       { $addToSet: { readBy: userId }, $set: { isRead: true } }
     );
 
