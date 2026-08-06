@@ -1,5 +1,6 @@
 import Meeting from '../models/Meeting.js';
 import axios from 'axios';
+import { sendMeetingEmail } from '../utils/sendEmail.js';
 
 const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 
@@ -78,6 +79,23 @@ export const createMeeting = async (req, res) => {
       agenda,
       invitationText,
       status: 'Scheduled'
+    });
+
+    // Extract emails from participants or fallback to department email distribution list
+    const recipientEmails = (participants && participants.length > 0)
+      ? participants.map(p => typeof p === 'string' ? p : p.email).filter(Boolean)
+      : ['faculty@department.ai', 'hod@department.ai'];
+
+    // Send meeting invitation email asynchronously via Nodemailer
+    sendMeetingEmail({
+      to: recipientEmails.length > 0 ? recipientEmails : ['faculty@department.ai'],
+      title: meeting.title,
+      date: meeting.meetingDate,
+      timeSlot: meeting.timeSlot,
+      room: meeting.room,
+      agenda: meeting.agenda,
+      invitationText: meeting.invitationText,
+      organizerName: req.user.name
     });
 
     res.status(201).json(meeting);

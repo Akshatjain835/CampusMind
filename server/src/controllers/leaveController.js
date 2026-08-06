@@ -125,12 +125,12 @@ export const getPendingLeaves = async (req, res) => {
     const reviewerRole = req.user.role;
 
     // Filter leaves so Faculty/HOD ONLY see leave requests from their own department
-    const departmentLeaves = reviewerRole === 'admin' 
-      ? allPendingLeaves 
+    const departmentLeaves = reviewerRole === 'admin'
+      ? allPendingLeaves
       : allPendingLeaves.filter(leave => {
-          const studentDept = leave.applicant?.department || 'Computer Science & Engineering';
-          return studentDept === reviewerDepartment;
-        });
+        const studentDept = leave.applicant?.department || 'Computer Science & Engineering';
+        return studentDept === reviewerDepartment;
+      });
 
     res.json(departmentLeaves);
   } catch (error) {
@@ -154,9 +154,9 @@ export const getLeaveHistory = async (req, res) => {
     const departmentHistory = reviewerRole === 'admin'
       ? allReviewedLeaves
       : allReviewedLeaves.filter(leave => {
-          const studentDept = leave.applicant?.department || 'Computer Science & Engineering';
-          return studentDept === reviewerDepartment;
-        });
+        const studentDept = leave.applicant?.department || 'Computer Science & Engineering';
+        return studentDept === reviewerDepartment;
+      });
 
     res.json(departmentHistory);
   } catch (error) {
@@ -193,7 +193,7 @@ export const reviewLeave = async (req, res) => {
         message: `Authority Denied: You are not the concerned authority. This student belongs to the '${studentDepartment}' department, whereas your account is in '${reviewerDepartment}'.`
       });
     }
-    
+
     // Rule 1: Faculty Leaves MUST be approved by HOD or Admin of that department
     if (applicantRole === 'faculty' && !['hod', 'admin'].includes(reviewerRole)) {
       return res.status(403).json({

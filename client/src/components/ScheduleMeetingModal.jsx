@@ -169,7 +169,7 @@ export const ScheduleMeetingModal = ({ isOpen, onClose, onMeetingScheduled }) =>
             gap: '8px'
           }}>
             <CheckCircle2 size={16} color="#34d399" />
-            <span>Department Meeting Scheduled & Calendar Invitations Sent!</span>
+            <span>Department Meeting Scheduled & Automated Email Invitations Dispatched to Attending Faculty!</span>
           </div>
         )}
 

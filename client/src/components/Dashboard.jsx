@@ -30,7 +30,7 @@ export const Dashboard = () => {
     const fetchChatHistory = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) return;
+        if (!token || token === 'undefined' || token === 'null') return;
         const res = await fetch('/api/ai/chat-history', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -117,6 +117,9 @@ export const Dashboard = () => {
           text: `Processing query "${userText}"... AI Service gateway endpoint ready.`
         }
       ]);
+    }
+  };
+
   const handleClearChatHistory = async () => {
     if (!window.confirm('Are you sure you want to clear your chat history?')) return;
     try {
