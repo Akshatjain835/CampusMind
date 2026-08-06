@@ -1,7 +1,7 @@
 import Timetable from '../models/Timetable.js';
 import axios from 'axios';
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // @desc    Generate conflict-free weekly timetable using Python AI Agent
 // @route   POST /api/timetable/generate-ai

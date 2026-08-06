@@ -1,9 +1,76 @@
 import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Sparkles, Calendar, CheckCircle2, AlertCircle, X, Send, Cpu } from 'lucide-react';
 
+const DEPARTMENT_SECTIONS = {
+  'Computer Science & Engineering': ['Section A', 'Section B', 'Section C', 'Section D'],
+  'Information Technology': ['Section IT-1', 'Section IT-2'],
+  'Electronics & Communication Engineering': ['Section E', 'Section F'],
+  'Electrical Engineering': ['Section G', 'Section H'],
+  'Mechanical Engineering': ['Section K', 'Section L'],
+  'Civil Engineering': ['Section M', 'Section N'],
+  'Applied Sciences & Humanities': ['Section S1', 'Section S2']
+};
+
+const DEPARTMENT_COURSES = {
+  'Computer Science & Engineering': [
+    { code: 'CS601', name: 'Compiler Design', faculty: 'Dr. R. K. Sharma', type: 'Lecture' },
+    { code: 'CS602', name: 'Computer Networks', faculty: 'Prof. Anita Roy', type: 'Lecture' },
+    { code: 'CS603', name: 'Artificial Intelligence', faculty: 'Dr. V. Patel', type: 'Lecture' },
+    { code: 'CS604', name: 'AI & Data Science Lab', faculty: 'Dr. V. Patel', type: 'Lab', room: 'AI Lab 101' },
+    { code: 'CS605', name: 'Networks & Security Lab', faculty: 'Prof. Anita Roy', type: 'Lab', room: 'Net Lab 102' }
+  ],
+  'Information Technology': [
+    { code: 'IT601', name: 'Distributed Systems & Cloud Security', faculty: 'Dr. N. Sinha', type: 'Lecture' },
+    { code: 'IT602', name: 'Full-Stack Web Architecture', faculty: 'Prof. S. Paul', type: 'Lecture' },
+    { code: 'IT603', name: 'Cyber Security & Forensics', faculty: 'Dr. M. Gupta', type: 'Lecture' },
+    { code: 'IT604', name: 'Web Architecture Lab', faculty: 'Prof. S. Paul', type: 'Lab', room: 'IT Lab 1' },
+    { code: 'IT605', name: 'Cyber Security Lab', faculty: 'Dr. M. Gupta', type: 'Lab', room: 'IT Lab 2' }
+  ],
+  'Electronics & Communication Engineering': [
+    { code: 'EC601', name: 'Analog & Digital Signal Processing', faculty: 'Dr. A. Verma', type: 'Lecture' },
+    { code: 'EC602', name: 'VLSI System Design', faculty: 'Prof. S. Gupta', type: 'Lecture' },
+    { code: 'EC603', name: 'Wireless Communication', faculty: 'Dr. M. Rao', type: 'Lecture' },
+    { code: 'EC604', name: 'VLSI Design Lab', faculty: 'Prof. S. Gupta', type: 'Lab', room: 'VLSI Lab 201' },
+    { code: 'EC605', name: 'Microwave & Antenna Lab', faculty: 'Dr. M. Rao', type: 'Lab', room: 'Communication Lab 202' }
+  ],
+  'Electrical Engineering': [
+    { code: 'EE401', name: 'Power Systems Analysis', faculty: 'Dr. H. Roy', type: 'Lecture' },
+    { code: 'EE402', name: 'Control Systems Engineering', faculty: 'Prof. D. Shah', type: 'Lecture' },
+    { code: 'EE403', name: 'Power Electronics & Drives', faculty: 'Dr. N. Bose', type: 'Lecture' },
+    { code: 'EE404', name: 'Power Systems Lab', faculty: 'Dr. H. Roy', type: 'Lab', room: 'Power Lab 101' },
+    { code: 'EE405', name: 'Electrical Machines Lab', faculty: 'Dr. N. Bose', type: 'Lab', room: 'High Voltage Lab' }
+  ],
+  'Mechanical Engineering': [
+    { code: 'ME601', name: 'Applied Thermodynamics & Heat Transfer', faculty: 'Dr. T. Reddy', type: 'Lecture' },
+    { code: 'ME602', name: 'Machine Design & Kinematics', faculty: 'Prof. A. Gill', type: 'Lecture' },
+    { code: 'ME603', name: 'Fluid Mechanics & Hydraulics', faculty: 'Dr. B. Das', type: 'Lecture' },
+    { code: 'ME604', name: 'Heat Transfer Lab', faculty: 'Dr. T. Reddy', type: 'Lab', room: 'Thermal Lab 1' },
+    { code: 'ME605', name: 'CAD/CAM & Robotics Lab', faculty: 'Dr. B. Das', type: 'Lab', room: 'CAD Lab 3' }
+  ],
+  'Civil Engineering': [
+    { code: 'CE501', name: 'Structural Analysis II', faculty: 'Dr. P. Sharma', type: 'Lecture' },
+    { code: 'CE502', name: 'Geotechnical Engineering', faculty: 'Prof. V. Kumar', type: 'Lecture' },
+    { code: 'CE503', name: 'Transportation Engineering', faculty: 'Dr. K. Joshi', type: 'Lecture' },
+    { code: 'CE504', name: 'Concrete Technology Lab', faculty: 'Dr. P. Sharma', type: 'Lab', room: 'Structural Lab' },
+    { code: 'CE505', name: 'Surveying Field Practicals', faculty: 'Dr. K. Joshi', type: 'Lab', room: 'Survey Field' }
+  ],
+  'Applied Sciences & Humanities': [
+    { code: 'AS101', name: 'Engineering Mathematics I', faculty: 'Dr. S. Nair', type: 'Lecture' },
+    { code: 'AS102', name: 'Engineering Physics', faculty: 'Dr. R. Kapoor', type: 'Lecture' },
+    { code: 'AS103', name: 'Engineering Chemistry', faculty: 'Prof. L. Bhatia', type: 'Lecture' },
+    { code: 'AS104', name: 'Physics Lab', faculty: 'Dr. R. Kapoor', type: 'Lab', room: 'Physics Lab 101' },
+    { code: 'AS105', name: 'Chemistry Lab', faculty: 'Prof. L. Bhatia', type: 'Lab', room: 'Chem Lab 102' }
+  ]
+};
+
 export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) => {
+  const { user } = useAuth();
+  const availableSections = DEPARTMENT_SECTIONS[user?.department] || ['Section A', 'Section B', 'Section C'];
+  const availableCourses = DEPARTMENT_COURSES[user?.department] || DEPARTMENT_COURSES['Computer Science & Engineering'];
+
   const [semester, setSemester] = useState('6th Semester');
-  const [section, setSection] = useState('Section A');
+  const [section, setSection] = useState(availableSections[0]);
   const [loading, setLoading] = useState(false);
   const [aiResult, setAiResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -28,14 +95,8 @@ export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) =
         body: JSON.stringify({
           semester,
           section,
-          courses: [
-            { code: 'CS601', name: 'Compiler Design', faculty: 'Dr. R. K. Sharma', type: 'Lecture' },
-            { code: 'CS602', name: 'Computer Networks', faculty: 'Prof. Anita Roy', type: 'Lecture' },
-            { code: 'CS603', name: 'Artificial Intelligence', faculty: 'Dr. V. Patel', type: 'Lecture' },
-            { code: 'CS604', name: 'AI & Data Lab', faculty: 'Dr. V. Patel', type: 'Lab', room: 'AI Lab 101' },
-            { code: 'CS605', name: 'Networks Lab', faculty: 'Prof. Anita Roy', type: 'Lab', room: 'Net Lab 102' }
-          ],
-          labRooms: ['AI Lab 101', 'Net Lab 102', 'LH-201', 'LH-202']
+          courses: availableCourses,
+          labRooms: ['Lab 101', 'Lab 102', 'Seminar Hall', 'LH-201']
         })
       });
 
@@ -189,9 +250,9 @@ export const TimetableGeneratorModal = ({ isOpen, onClose, onTimetableSaved }) =
                 value={section} 
                 onChange={(e) => setSection(e.target.value)}
               >
-                <option value="Section A">Section A</option>
-                <option value="Section B">Section B</option>
-                <option value="Section C">Section C</option>
+                {availableSections.map(sec => (
+                  <option key={sec} value={sec}>{sec}</option>
+                ))}
               </select>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import ChatMessage from '../models/ChatMessage.js';
 import axios from 'axios';
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // @desc    Get user's persistent chat history
 // @route   GET /api/ai/chat-history
@@ -61,6 +61,9 @@ export const processAiQuery = async (req, res) => {
       const aiRes = await axios.post(`${AI_SERVICE_URL}/api/ai/query`, {
         user_name: userName,
         user_role: userRole,
+        department: req.user.department || 'Computer Science & Engineering',
+        semester: req.user.semester || '6th Semester',
+        section: req.user.section || 'Section A',
         query,
         thread_id: userId
       });

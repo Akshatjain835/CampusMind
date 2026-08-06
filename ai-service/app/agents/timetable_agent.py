@@ -22,13 +22,55 @@ def generate_conflict_free_timetable(
     Ensures zero faculty collisions, room capacity compliance, and lab slot distribution.
     """
     if not courses:
-        courses = [
-            {"code": "CS601", "name": "Compiler Design", "faculty": "Dr. R. K. Sharma", "type": "Lecture"},
-            {"code": "CS602", "name": "Computer Networks", "faculty": "Prof. Anita Roy", "type": "Lecture"},
-            {"code": "CS603", "name": "Artificial Intelligence", "faculty": "Dr. V. Patel", "type": "Lecture"},
-            {"code": "CS604", "name": "AI & Data Lab", "faculty": "Dr. V. Patel", "type": "Lab", "room": "Lab 101"},
-            {"code": "CS605", "name": "Networks Lab", "faculty": "Prof. Anita Roy", "type": "Lab", "room": "Lab 102"}
-        ]
+        dept_lower = department.lower()
+        if "electronics" in dept_lower or "ece" in dept_lower:
+            courses = [
+                {"code": "EC601", "name": "Analog & Digital Signals", "faculty": "Dr. A. Verma", "type": "Lecture"},
+                {"code": "EC602", "name": "VLSI System Design", "faculty": "Prof. S. Gupta", "type": "Lecture"},
+                {"code": "EC603", "name": "Wireless Communication", "faculty": "Dr. M. Rao", "type": "Lecture"},
+                {"code": "EC604", "name": "VLSI Design Lab", "faculty": "Prof. S. Gupta", "type": "Lab", "room": "VLSI Lab 201"},
+                {"code": "EC605", "name": "Microwave & Antenna Lab", "faculty": "Dr. M. Rao", "type": "Lab", "room": "Communication Lab 202"}
+            ]
+        elif "civil" in dept_lower:
+            courses = [
+                {"code": "CE501", "name": "Structural Analysis II", "faculty": "Dr. P. Sharma", "type": "Lecture"},
+                {"code": "CE502", "name": "Geotechnical Engineering", "faculty": "Prof. V. Kumar", "type": "Lecture"},
+                {"code": "CE503", "name": "Transportation Engineering", "faculty": "Dr. K. Joshi", "type": "Lecture"},
+                {"code": "CE504", "name": "Concrete Technology Lab", "faculty": "Dr. P. Sharma", "type": "Lab", "room": "Structural Lab"},
+                {"code": "CE505", "name": "Surveying Field Practicals", "faculty": "Dr. K. Joshi", "type": "Lab", "room": "Survey Field"}
+            ]
+        elif "electrical" in dept_lower:
+            courses = [
+                {"code": "EE401", "name": "Power Systems Analysis", "faculty": "Dr. H. Roy", "type": "Lecture"},
+                {"code": "EE402", "name": "Control Systems Engineering", "faculty": "Prof. D. Shah", "type": "Lecture"},
+                {"code": "EE403", "name": "Power Electronics & Drives", "faculty": "Dr. N. Bose", "type": "Lecture"},
+                {"code": "EE404", "name": "Power Systems Lab", "faculty": "Dr. H. Roy", "type": "Lab", "room": "Power Lab 101"},
+                {"code": "EE405", "name": "Electrical Machines Lab", "faculty": "Dr. N. Bose", "type": "Lab", "room": "High Voltage Lab"}
+            ]
+        elif "mechanical" in dept_lower:
+            courses = [
+                {"code": "ME601", "name": "Thermodynamics & Heat Transfer", "faculty": "Dr. T. Reddy", "type": "Lecture"},
+                {"code": "ME602", "name": "Machine Design & Kinematics", "faculty": "Prof. A. Gill", "type": "Lecture"},
+                {"code": "ME603", "name": "Fluid Mechanics", "faculty": "Dr. B. Das", "type": "Lecture"},
+                {"code": "ME604", "name": "Heat Transfer Lab", "faculty": "Dr. T. Reddy", "type": "Lab", "room": "Thermal Lab 1"},
+                {"code": "ME605", "name": "CAD/CAM & Robotics Lab", "faculty": "Dr. B. Das", "type": "Lab", "room": "CAD Lab 3"}
+            ]
+        elif "information" in dept_lower or "it" in dept_lower:
+            courses = [
+                {"code": "IT601", "name": "Distributed Systems & Cloud Security", "faculty": "Dr. N. Sinha", "type": "Lecture"},
+                {"code": "IT602", "name": "Full-Stack Web Architecture", "faculty": "Prof. S. Paul", "type": "Lecture"},
+                {"code": "IT603", "name": "Cyber Security & Forensics", "faculty": "Dr. M. Gupta", "type": "Lecture"},
+                {"code": "IT604", "name": "Web Architecture Lab", "faculty": "Prof. S. Paul", "type": "Lab", "room": "IT Lab 1"},
+                {"code": "IT605", "name": "Cyber Security Lab", "faculty": "Dr. M. Gupta", "type": "Lab", "room": "IT Lab 2"}
+            ]
+        else:
+            courses = [
+                {"code": "CS601", "name": "Compiler Design", "faculty": "Dr. R. K. Sharma", "type": "Lecture"},
+                {"code": "CS602", "name": "Computer Networks", "faculty": "Prof. Anita Roy", "type": "Lecture"},
+                {"code": "CS603", "name": "Artificial Intelligence", "faculty": "Dr. V. Patel", "type": "Lecture"},
+                {"code": "CS604", "name": "AI & Data Lab", "faculty": "Dr. V. Patel", "type": "Lab", "room": "AI Lab 101"},
+                {"code": "CS605", "name": "Networks Lab", "faculty": "Prof. Anita Roy", "type": "Lab", "room": "Net Lab 102"}
+            ]
 
     if not lab_rooms:
         lab_rooms = ["Lab 101", "Lab 102", "LH-201", "LH-202"]

@@ -1,7 +1,7 @@
 import Notice from '../models/Notice.js';
 import axios from 'axios';
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // @desc    Generate AI draft circular text from prompt
 // @route   POST /api/notices/generate-ai
@@ -88,8 +88,8 @@ export const getNotices = async (req, res) => {
         { department: 'All' }
       ]
     })
-    .populate('author', 'name role designation')
-    .sort({ createdAt: -1 });
+      .populate('author', 'name role designation')
+      .sort({ createdAt: -1 });
 
     res.json(notices);
   } catch (error) {

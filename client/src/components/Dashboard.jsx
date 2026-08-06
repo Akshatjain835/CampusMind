@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { Navbar } from './Navbar';
 import { LeaveManagement } from './LeaveManagement';
 import { FacultyApprovalPortal } from './FacultyApprovalPortal';
 import { NoticeBoard } from './NoticeBoard';
@@ -145,58 +146,8 @@ export const Dashboard = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Top Header */}
-      <header className="glass-panel" style={{
-        borderRadius: 0,
-        borderLeft: 0,
-        borderRight: 0,
-        borderTop: 0,
-        padding: '16px 32px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        position: 'sticky',
-        top: 0,
-        zIndex: 100
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #6366f1, #38bdf8)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 4px 15px rgba(99, 102, 241, 0.4)'
-          }}>
-            <Bot size={22} color="#fff" />
-          </div>
-          <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800 }}>DepartmentAI</h2>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-dim)', letterSpacing: '0.04em' }}>
-              Academic Governance & Administrative Intelligence
-            </span>
-          </div>
-        </div>
-
-        {/* User Badge & Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 700 }}>{user?.name}</div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{user?.department}</div>
-            </div>
-            <span className={getRoleBadgeClass(user?.role)}>
-              {user?.role?.toUpperCase()}
-            </span>
-          </div>
-
-          <button onClick={logout} className="btn btn-secondary" style={{ padding: '8px 14px', fontSize: '0.85rem' }}>
-            <LogOut size={16} /> Sign Out
-          </button>
-        </div>
-      </header>
+      {/* Top Navbar */}
+      <Navbar />
 
       {/* Main Container */}
       <main style={{ flex: 1, padding: '32px', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>

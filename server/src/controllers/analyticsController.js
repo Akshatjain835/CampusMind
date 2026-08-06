@@ -4,7 +4,7 @@ import LeaveRequest from '../models/LeaveRequest.js';
 import Notice from '../models/Notice.js';
 import axios from 'axios';
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // @desc    Get real-time department KPI analytics & performance metrics
 // @route   GET /api/analytics/kpi

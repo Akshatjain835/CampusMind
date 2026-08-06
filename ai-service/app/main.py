@@ -29,6 +29,8 @@ class QueryRequest(BaseModel):
     user_name: str = "Rahul Sharma"
     user_role: str = "student"
     department: Optional[str] = "Computer Science & Engineering"
+    semester: Optional[str] = "6th Semester"
+    section: Optional[str] = "Section A"
     query: str
     thread_id: Optional[str] = "default_session"
 
@@ -97,6 +99,8 @@ def execute_agent_workflow(request: QueryRequest):
         initial_state: DepartmentState = {
             "user_name": request.user_name,
             "user_role": request.user_role,
+            "semester": request.semester or "6th Semester",
+            "section": request.section or "Section A",
             "query": request.query,
             "intent": None,
             "context": None,

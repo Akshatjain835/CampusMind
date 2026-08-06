@@ -2,7 +2,7 @@ import Meeting from '../models/Meeting.js';
 import axios from 'axios';
 import { sendMeetingEmail } from '../utils/sendEmail.js';
 
-const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
 
 // @desc    Schedule AI Meeting (calls LangGraph Meeting Agent)
 // @route   POST /api/meetings/schedule-ai

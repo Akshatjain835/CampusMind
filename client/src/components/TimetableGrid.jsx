@@ -6,14 +6,23 @@ import {
   Trash2, RefreshCw, Layers, MapPin, CheckCircle2 
 } from 'lucide-react';
 
-const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const DEPARTMENT_SECTIONS = {
+  'Computer Science & Engineering': ['Section A', 'Section B', 'Section C', 'Section D'],
+  'Information Technology': ['Section IT-1', 'Section IT-2'],
+  'Electronics & Communication Engineering': ['Section E', 'Section F'],
+  'Electrical Engineering': ['Section G', 'Section H'],
+  'Mechanical Engineering': ['Section K', 'Section L'],
+  'Civil Engineering': ['Section M', 'Section N'],
+  'Applied Sciences & Humanities': ['Section S1', 'Section S2']
+};
 
 export const TimetableGrid = () => {
   const { user } = useAuth();
+  const availableSections = DEPARTMENT_SECTIONS[user?.department] || ['Section A', 'Section B', 'Section C'];
   const [timetable, setTimetable] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [semester, setSemester] = useState('6th Semester');
-  const [section, setSection] = useState('Section A');
+  const [semester, setSemester] = useState(user?.semester || '6th Semester');
+  const [section, setSection] = useState(user?.section || availableSections[0]);
   const [modalOpen, setModalOpen] = useState(false);
 
   const fetchTimetable = async () => {
@@ -104,13 +113,13 @@ export const TimetableGrid = () => {
 
           <select 
             className="form-select" 
-            style={{ width: '140px' }}
+            style={{ width: '150px' }}
             value={section} 
             onChange={(e) => setSection(e.target.value)}
           >
-            <option value="Section A">Section A</option>
-            <option value="Section B">Section B</option>
-            <option value="Section C">Section C</option>
+            {availableSections.map(sec => (
+              <option key={sec} value={sec}>{sec}</option>
+            ))}
           </select>
         </div>
 
@@ -140,22 +149,29 @@ export const TimetableGrid = () => {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
           {DAYS.map((day) => {
             const daySlots = slots.filter(s => s.day === day);
+            const isToday = new Date().toLocaleDateString('en-US', { weekday: 'long' }) === day;
 
             return (
               <div 
                 key={day} 
                 style={{ 
-                  background: 'rgba(0, 0, 0, 0.3)', 
-                  border: '1px solid rgba(255, 255, 255, 0.08)', 
+                  background: isToday ? 'rgba(99, 102, 241, 0.12)' : 'rgba(0, 0, 0, 0.3)', 
+                  border: isToday ? '1px solid rgba(129, 140, 248, 0.45)' : '1px solid rgba(255, 255, 255, 0.08)', 
                   borderRadius: '12px', 
                   padding: '14px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px'
+                  gap: '12px',
+                  boxShadow: isToday ? '0 0 20px rgba(99, 102, 241, 0.2)' : 'none'
                 }}
               >
-                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-purple)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '8px' }}>
-                  {day}
+                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: isToday ? '#a5b4fc' : 'var(--accent-purple)', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', paddingBottom: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>{day}</span>
+                  {isToday && (
+                    <span style={{ fontSize: '0.65rem', padding: '2px 6px', borderRadius: '8px', background: '#6366f1', color: '#fff', fontWeight: 800 }}>
+                      TODAY
+                    </span>
+                  )}
                 </div>
 
                 {daySlots.length === 0 ? (
