@@ -50,8 +50,8 @@ app.use((req, res) => {
 let PORT = parseInt(process.env.PORT, 10) || 5000;
 
 const startServer = (portToUse) => {
-  const server = app.listen(portToUse, () => {
-    console.log(`[DepartmentAI Express Gateway] Running on http://localhost:${portToUse}`);
+  const server = app.listen(portToUse, '0.0.0.0', () => {
+    console.log(`[DepartmentAI Express Gateway] Running on port ${portToUse}`);
   });
 
   server.on('error', (err) => {

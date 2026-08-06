@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/api/:path*", "destination": "http://127.0.0.1:5000/api/:path*" },
+    { "source": "/api/:path*", "destination": "https://campusmind-1-gywe.onrender.com/api/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
