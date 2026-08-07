@@ -114,6 +114,8 @@ import asyncio
 
 from app.graph.dynamic_graph import dynamic_campus_graph
 from app.state.state import AgentState
+from app.cache.redis_cache import get_cached_response, set_cached_response
+from app.observability.langsmith_tracer import setup_langsmith_tracing, audit_agent_step
 
 @app.post("/api/ai/stream-query")
 async def stream_agent_workflow(request: QueryRequest):
@@ -158,6 +160,7 @@ async def stream_agent_workflow(request: QueryRequest):
                 for node_name, node_state in event.items():
                     chain = node_state.get("agent_chain", [])
                     active_agent = chain[-1] if chain else node_name
+                    audit_agent_step(active_agent, node_state)
                     
                     data_payload = {
                         "node": node_name,
@@ -178,8 +181,20 @@ async def stream_agent_workflow(request: QueryRequest):
 
 @app.post("/api/ai/query")
 def execute_agent_workflow(request: QueryRequest):
-    """Executes the autonomous multi-agent system (Planning, Negotiation, Reflection, Memory)."""
+    """Executes the autonomous multi-agent system with Redis caching and LangSmith tracing."""
     try:
+        # 1. Check Redis / In-Memory Cache
+        cached = get_cached_response(
+            query=request.query,
+            user_role=request.user_role or "student",
+            department=request.department or "Computer Science & Engineering"
+        )
+        if cached:
+            return {
+                **cached,
+                "cached": True
+            }
+
         initial_state: AgentState = {
             "user_name": request.user_name,
             "user_role": request.user_role,
@@ -218,7 +233,7 @@ def execute_agent_workflow(request: QueryRequest):
         chain = final_state.get("agent_chain", [])
         intent_label = f"Multi-Agent System ({' ➔ '.join(chain)})" if chain else "Autonomous Agent"
         
-        return {
+        result_payload = {
             "query": request.query,
             "intent": intent_label,
             "agent_chain": chain,
@@ -227,6 +242,18 @@ def execute_agent_workflow(request: QueryRequest):
             "human_approval_context": final_state.get("human_approval_context"),
             "final_response": final_state.get("final_response", "No response generated.")
         }
+
+        # 2. Save result to Redis / In-Memory Cache
+        set_cached_response(
+            query=request.query,
+            response_data=result_payload,
+            user_role=request.user_role or "student",
+            department=request.department or "Computer Science & Engineering"
+        )
+        
+        return result_payload
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
