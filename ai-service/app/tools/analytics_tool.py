@@ -23,7 +23,7 @@ def forecast_exam_eligibility_risk(
     # Calculate extra classes needed to achieve 75%
     # (attended + x) / (projected_total + x) >= 0.75 => x >= 4 * projected_total * 0.75 - 4 * attended...
     # (attended + x) >= 0.75 * (projected_total + x) => 0.25 x >= 0.75 * projected_total - attended
-    required_x = max(0, int((0.75 * projected_total - attended) / 0.25) + 1)
+    required_x = max(0, int((0.75 * projected_total - attended_classes) / 0.25) + 1)
     
     risk_level = "LOW"
     if projected_pct < 65.0:

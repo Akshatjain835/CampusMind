@@ -14,5 +14,7 @@ class Settings:
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379")
     LANGCHAIN_TRACING_V2: str = os.getenv("LANGCHAIN_TRACING_V2", "false")
     LANGCHAIN_API_KEY: str = os.getenv("LANGCHAIN_API_KEY", "")
+    GMAIL_USER: str = os.getenv("GMAIL_USER", "")
+    GMAIL_PASS: str = os.getenv("GMAIL_PASS", "")
 
 settings = Settings()

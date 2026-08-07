@@ -53,9 +53,13 @@ export const processAiQuery = async (req, res) => {
       text: query
     });
 
-    // 2. Forward query with thread_id = userId to FastAPI LangGraph Agent
+    // 2. Forward query with thread_id = userId to FastAPI LangGraph Multi-Agent Engine
     let agentResponseText = "Hello! I am your DepartmentAI Academic Secretary. How can I assist you today?";
-    let agentRoleText = "Router & RAG Agent";
+    let agentRoleText = "Autonomous Multi-Agent System";
+    let agentChain = [];
+    let goal = "";
+    let needsHumanApproval = false;
+    let humanApprovalContext = null;
 
     try {
       const aiRes = await axios.post(`${AI_SERVICE_URL}/api/ai/query`, {
@@ -68,11 +72,19 @@ export const processAiQuery = async (req, res) => {
         thread_id: userId
       });
 
-      if (aiRes.data && aiRes.data.final_response) {
-        agentResponseText = aiRes.data.final_response;
-        if (aiRes.data.intent) {
-          agentRoleText = `Agent (${aiRes.data.intent.toUpperCase()})`;
+      if (aiRes.data) {
+        if (aiRes.data.final_response) {
+          agentResponseText = aiRes.data.final_response;
         }
+        if (aiRes.data.intent) {
+          agentRoleText = aiRes.data.intent;
+        }
+        if (aiRes.data.agent_chain) {
+          agentChain = aiRes.data.agent_chain;
+        }
+        goal = aiRes.data.goal || '';
+        needsHumanApproval = !!aiRes.data.needs_human_approval;
+        humanApprovalContext = aiRes.data.human_approval_context || null;
       }
     } catch (aiErr) {
       console.error('FastAPI Agent Connection Warning:', aiErr.message);
@@ -91,6 +103,10 @@ export const processAiQuery = async (req, res) => {
       query,
       sender: 'agent',
       role: agentRoleText,
+      agent_chain: agentChain,
+      goal,
+      needs_human_approval: needsHumanApproval,
+      human_approval_context: humanApprovalContext,
       text: agentResponseText,
       createdAt: agentMsg.createdAt
     });

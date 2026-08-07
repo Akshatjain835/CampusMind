@@ -1,0 +1,50 @@
+{
+  "STU1024": {
+    "student_id": "STU1024",
+    "name": "Rahul Sharma",
+    "department": "Computer Science & Engineering",
+    "semester": "6th Semester",
+    "section": "Section A",
+    "historical_attendance": [
+      {
+        "semester": "4th Semester",
+        "percentage": 84.5
+      },
+      {
+        "semester": "5th Semester",
+        "percentage": 81.0
+      },
+      {
+        "semester": "6th Semester (Current)",
+        "percentage": 72.0
+      }
+    ],
+    "past_queries": [
+      "Yesterday: Need leave next Monday",
+      "Last Month: Query regarding Mid-Sem exam timetable",
+      "Test Query",
+      "I have 72% attendance. I need leave for next week. Can I still sit in the semester exam?",
+      "Test Query",
+      "Submit my leave application for next week to HOD",
+      "I have 72% attendance. I need leave for next week. Can I still sit in the semester exam?",
+      "I have 72% attendance. I need leave for next week. Can I still sit in the semester exam?"
+    ],
+    "past_recommendations": [
+      "Recommended attending 5 extra classes in Compiler Design lab",
+      "Test Rec",
+      "Hello Rahul Sharma!\n\n**Goal:** Analyze exam eligibility and leave impact\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currentl",
+      "Test Rec",
+      "Hello Rahul Sharma!\n\n**Goal:** Evaluate leave request\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currently 72.0% (144/200 cl",
+      "Hello Rahul Sharma!\n\n**Goal:** Analyze exam eligibility and leave impact\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currentl",
+      "Hello Rahul Sharma!\n\n**Goal:** Analyze exam eligibility and leave impact\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currentl"
+    ],
+    "active_leave_applications": [
+      {
+        "id": "LV-904",
+        "type": "Medical",
+        "days": 5,
+        "status": "Pending HOD Sanction"
+      }
+    ]
+  }
+}

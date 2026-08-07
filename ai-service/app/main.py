@@ -112,32 +112,53 @@ from app.state.state import AgentState
 
 @app.post("/api/ai/query")
 def execute_agent_workflow(request: QueryRequest):
-    """Executes the complete LangGraph Multi-Agent workflow using Qdrant RAG."""
+    """Executes the autonomous multi-agent system (Planning, Negotiation, Reflection, Memory)."""
     try:
-        initial_state: DepartmentState = {
+        initial_state: AgentState = {
             "user_name": request.user_name,
             "user_role": request.user_role,
+            "student_id": "STU1024",
+            "department": request.department or "Computer Science & Engineering",
             "semester": request.semester or "6th Semester",
             "section": request.section or "Section A",
             "query": request.query,
-            "intent": None,
-            "context": None,
+            "multi_modal_inputs": None,
+            "plan": None,
+            "task_queue": [],
+            "completed_tasks": [],
+            "current_task_id": None,
             "agent_chain": [],
-            "final_response": None
+            "shared_memory": {},
+            "tool_results": {},
+            "retrieved_documents": [],
+            "reflection_count": 0,
+            "reflection_feedback": None,
+            "needs_human_approval": False,
+            "human_approval_context": None,
+            "human_approved": None,
+            "is_complete": False,
+            "final_response": None,
+            "errors": []
         }
         
         dept_key = (request.department or "CSE").replace(" ", "_")
         session_thread_id = f"{dept_key}_{request.user_role}_{request.thread_id or 'default'}"
-        result_state = department_graph.invoke(
+        final_state = dynamic_campus_graph.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_thread_id}}
         )
         
+        chain = final_state.get("agent_chain", [])
+        intent_label = f"Multi-Agent System ({' ➔ '.join(chain)})" if chain else "Autonomous Agent"
+        
         return {
             "query": request.query,
-            "intent": result_state.get("intent"),
-            "agent_chain": result_state.get("agent_chain", []),
-            "final_response": result_state.get("final_response", "No response generated.")
+            "intent": intent_label,
+            "agent_chain": chain,
+            "goal": final_state.get("plan", {}).get("goal"),
+            "needs_human_approval": final_state.get("needs_human_approval", False),
+            "human_approval_context": final_state.get("human_approval_context"),
+            "final_response": final_state.get("final_response", "No response generated.")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -185,7 +206,45 @@ def execute_dynamic_multi_agent_workflow(request: QueryRequest):
             "agent_chain": final_state.get("agent_chain", []),
             "subtasks": final_state.get("plan", {}).get("tasks", []),
             "shared_memory": final_state.get("shared_memory", {}),
+            "needs_human_approval": final_state.get("needs_human_approval", False),
+            "human_approval_context": final_state.get("human_approval_context"),
             "final_response": final_state.get("final_response")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class HITLApprovalRequest(BaseModel):
+    thread_id: str
+    approved: bool
+    approver_role: str = "HOD"
+    comments: Optional[str] = "Approved by Department Administrator"
+
+@app.post("/api/ai/human-approve")
+def approve_human_in_the_loop_action(request: HITLApprovalRequest):
+    """Resumes paused agent graph execution after human confirmation."""
+    try:
+        session_thread_id = request.thread_id
+        current_state = dynamic_campus_graph.get_state({"configurable": {"thread_id": session_thread_id}}).values
+        
+        if not current_state:
+            raise HTTPException(status_code=404, detail="No active graph checkpoint found for thread_id.")
+            
+        updated_state = {
+            **current_state,
+            "human_approved": True,
+            "needs_human_approval": False
+        }
+        
+        resumed_state = dynamic_campus_graph.invoke(
+            updated_state,
+            config={"configurable": {"thread_id": session_thread_id}}
+        )
+        
+        return {
+            "status": "Resumed & Completed",
+            "thread_id": session_thread_id,
+            "agent_chain": resumed_state.get("agent_chain", []),
+            "final_response": resumed_state.get("final_response")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

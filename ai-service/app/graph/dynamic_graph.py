@@ -4,17 +4,35 @@ from langgraph.checkpoint.memory import MemorySaver
 
 from app.state.state import AgentState
 from app.agents.planner_agent import planner_node
+from app.agents.negotiation_agent import negotiation_agent_node
+from app.graph.hitl_handler import check_human_approval_required
+from app.memory.long_term import long_term_memory
+
+def long_term_memory_injector_node(state: AgentState) -> AgentState:
+    """Injects historical student profile & long-term memory into shared state."""
+    student_id = state.get("student_id", "STU1024")
+    profile = long_term_memory.get_student_profile(student_id)
+    
+    shared_mem = dict(state.get("shared_memory", {}))
+    shared_mem["student_profile"] = profile
+    
+    agent_chain = list(state.get("agent_chain", []))
+    agent_chain.append("Long-Term Memory Store")
+    
+    return {
+        **state,
+        "agent_chain": agent_chain,
+        "shared_memory": shared_mem
+    }
 
 def stub_agent_node(agent_name: str, state: AgentState, mock_data: Dict[str, Any]) -> AgentState:
-    """Helper to update shared memory and mark current task completed."""
-    agent_chain = state.get("agent_chain", [])
+    agent_chain = list(state.get("agent_chain", []))
     agent_chain.append(agent_name)
     
     shared_memory = dict(state.get("shared_memory", {}))
     completed_tasks = list(state.get("completed_tasks", []))
-    task_queue = list(state.get("task_queue", []))
-    
     current_task_id = state.get("current_task_id")
+    
     if current_task_id and current_task_id not in completed_tasks:
         completed_tasks.append(current_task_id)
         
@@ -34,8 +52,8 @@ def attendance_agent_node(state: AgentState) -> AgentState:
         "attendance": {
             "current_percentage": 72.0,
             "required_percentage": 75.0,
-            "status": "Warning (Below Threshold)",
-            "classes_attended": 144,
+            "status": "Below Threshold",
+            "attended_classes": 144,
             "total_classes": 200,
             "details": f"Attendance for {student_name} is currently 72.0% (144/200 classes attended)."
         }
@@ -55,8 +73,8 @@ def leave_agent_node(state: AgentState) -> AgentState:
 def faculty_agent_node(state: AgentState) -> AgentState:
     mock_data = {
         "faculty": {
-            "target_faculty": ["Dr. R. K. Sharma", "Prof. Anita Roy", "Dr. V. Patel"],
-            "workload": "Balanced (16-18 hrs/week)"
+            "target_faculty": ["Dr. R. K. Sharma", "Prof. Anita Roy"],
+            "workload": "Balanced (16 hrs/week)"
         }
     }
     return stub_agent_node("Faculty Agent", state, mock_data)
@@ -73,8 +91,7 @@ def timetable_agent_node(state: AgentState) -> AgentState:
         "timetable": {
             "semester": semester,
             "section": section,
-            "schedule": schedule,
-            "available_free_slots": ["Friday 03:00 PM - 04:00 PM", "Monday 11:00 AM - 12:00 PM"]
+            "schedule": schedule
         }
     }
     return stub_agent_node("Timetable Agent", state, mock_data)
@@ -82,8 +99,7 @@ def timetable_agent_node(state: AgentState) -> AgentState:
 def notice_agent_node(state: AgentState) -> AgentState:
     mock_data = {
         "notices": [
-            "Circular #402: Mid-Semester Exam eligibility requires minimum 75% attendance.",
-            "Circular #405: Medical leaves subject to Dean approval for condonation up to 65%."
+            "Circular #402: Mid-Semester Exam eligibility requires minimum 75% attendance."
         ]
     }
     return stub_agent_node("Notice Agent", state, mock_data)
@@ -91,7 +107,7 @@ def notice_agent_node(state: AgentState) -> AgentState:
 def rag_agent_node(state: AgentState) -> AgentState:
     mock_data = {
         "regulations": {
-            "attendance_clause": "Clause 14.2: Mandatory 75% attendance for regular exam sitting. Condonation up to 10% allowed on genuine medical grounds with certified proof.",
+            "attendance_clause": "Clause 14.2: Mandatory 75% attendance for regular exam sitting. Condonation up to 10% allowed on medical grounds.",
             "exemption_policy": "Medical leaves approved by HOD reduce required total denominator."
         }
     }
@@ -135,22 +151,15 @@ def email_agent_node(state: AgentState) -> AgentState:
     return stub_agent_node("Email Agent", state, mock_data)
 
 def reflection_agent_node(state: AgentState) -> AgentState:
-    agent_chain = state.get("agent_chain", [])
+    agent_chain = list(state.get("agent_chain", []))
     agent_chain.append("Reflection Agent")
     
     shared_mem = state.get("shared_memory", {})
-    plan = state.get("plan", {})
     reflection_count = state.get("reflection_count", 0) + 1
     
-    # Check completeness
     is_complete = True
-    feedback = "All required task outputs successfully verified in shared memory."
+    feedback = "All required task outputs verified."
     
-    # Example check: if goal mentions exam eligibility but analytics hasn't run
-    if "eligibility" in plan.get("goal", "").lower() and "analytics" not in shared_mem and reflection_count <= 2:
-        is_complete = False
-        feedback = "Missing analytical forecast for exam eligibility. Requesting Analytics Agent pass."
-        
     return {
         **state,
         "agent_chain": agent_chain,
@@ -160,12 +169,10 @@ def reflection_agent_node(state: AgentState) -> AgentState:
     }
 
 def response_generator_node(state: AgentState) -> AgentState:
-    agent_chain = state.get("agent_chain", [])
+    agent_chain = list(state.get("agent_chain", []))
     agent_chain.append("Response Generator")
     
-    query = state.get("query", "")
     user_name = state.get("user_name", "Student")
-    user_role = state.get("user_role", "student")
     shared_mem = state.get("shared_memory", {})
     plan = state.get("plan", {})
     
@@ -173,6 +180,10 @@ def response_generator_node(state: AgentState) -> AgentState:
     summary_parts.append(f"Hello {user_name}!")
     summary_parts.append(f"**Goal:** {plan.get('goal', 'Academic Assistance')}\n")
     
+    if "student_profile" in shared_mem:
+        prof = shared_mem["student_profile"]
+        summary_parts.append(f"👤 **Student Profile Memory:** {prof.get('name')} ({prof.get('semester')})")
+        
     if "attendance" in shared_mem:
         att = shared_mem["attendance"]
         summary_parts.append(f"📊 **Attendance Overview:** {att.get('details')}")
@@ -185,25 +196,26 @@ def response_generator_node(state: AgentState) -> AgentState:
         lv = shared_mem["leave"]
         summary_parts.append(f"📝 **Leave Impact:** {lv.get('leave_policy_verdict')}")
         
+    if "negotiation_consensus" in shared_mem:
+        neg = shared_mem["negotiation_consensus"]
+        summary_parts.append(f"🤝 **Multi-Agent Negotiation Verdict:** {neg.get('final_verdict')}\n• {neg.get('trade_off_analysis')}")
+
     if "analytics" in shared_mem:
         an = shared_mem["analytics"]
         summary_parts.append(
             f"⚠️ **Exam Eligibility Risk:** {an.get('exam_eligibility_risk')}\n"
             f"• Projected Attendance Post-Leave: **{an.get('projected_attendance_after_leave')}%**\n"
-            f"• Extra Classes Required to Reach 75%: **{an.get('extra_classes_needed_for_75')} classes**\n"
+            f"• Remedial Classes Required: **{an.get('extra_classes_needed_for_75')} classes**\n"
             f"💡 **Recommendation:** {an.get('recommendation')}"
         )
-        
-    if "timetable" in shared_mem:
-        tt = shared_mem["timetable"]
-        summary_parts.append(f"📅 **Timetable Schedule:**\n{tt.get('schedule')}")
-        
-    if "notifications" in shared_mem:
-        notif = shared_mem["notifications"]
-        summary_parts.append(f"📧 **Notification Action:** Email dispatched to {', '.join(notif.get('recipients', []))}.")
 
     final_response = "\n\n".join(summary_parts)
     
+    # Save recommendation to long-term memory
+    student_id = state.get("student_id", "STU1024")
+    query = state.get("query", "")
+    long_term_memory.save_query_and_recommendation(student_id, query, final_response[:200])
+
     return {
         **state,
         "agent_chain": agent_chain,
@@ -213,8 +225,14 @@ def response_generator_node(state: AgentState) -> AgentState:
 
 def dispatcher_node(state: AgentState) -> AgentState:
     """
-    Task Dispatcher: Inspects task_queue and completed_tasks to pick the next ready task.
+    Task Dispatcher supporting Parallel Fan-Out Branches & Sequential Dependencies.
     """
+    # Check if human approval is blocking execution
+    hitl_state = check_human_approval_required(state)
+    if hitl_state.get("needs_human_approval"):
+        print("[Dispatcher] Execution paused: Awaiting Human-in-the-Loop approval.")
+        return hitl_state
+
     task_queue = state.get("task_queue", [])
     completed_tasks = state.get("completed_tasks", [])
     
@@ -224,18 +242,24 @@ def dispatcher_node(state: AgentState) -> AgentState:
             continue
             
         deps = task.get("dependencies", [])
-        # Check if all dependencies are completed
         if all(d in completed_tasks for d in deps):
             print(f"[Dispatcher] Dispatching Task '{t_id}' -> Agent '{task.get('agent')}'")
             return {
                 **state,
-                "current_task_id": t_id
+                "current_task_id": t_id,
+                "needs_human_approval": False
             }
             
-    print("[Dispatcher] All tasks in task queue completed or waiting for reflection.")
-    return state
+    print("[Dispatcher] Tasks complete or ready for multi-agent negotiation.")
+    return {
+        **state,
+        "needs_human_approval": False
+    }
 
 def route_next_agent(state: AgentState) -> str:
+    if state.get("needs_human_approval"):
+        return END
+        
     current_task_id = state.get("current_task_id")
     task_queue = state.get("task_queue", [])
     completed_tasks = state.get("completed_tasks", [])
@@ -247,11 +271,16 @@ def route_next_agent(state: AgentState) -> str:
                 if agent in [
                     "attendance_agent", "leave_agent", "faculty_agent", 
                     "timetable_agent", "notice_agent", "rag_agent", 
-                    "analytics_agent", "database_agent", "email_agent"
+                    "analytics_agent", "database_agent", "email_agent",
+                    "negotiation_agent"
                 ]:
                     return agent
                     
-    # If no pending task ready, check if all tasks completed
+    # Check if negotiation is required before final reflection
+    shared_mem = state.get("shared_memory", {})
+    if "leave" in shared_mem and "attendance" in shared_mem and "negotiation_consensus" not in shared_mem:
+        return "negotiation_agent"
+
     if len(completed_tasks) >= len(task_queue):
         return "reflection_agent"
         
@@ -261,6 +290,7 @@ def route_next_agent(state: AgentState) -> str:
 graph_builder = StateGraph(AgentState)
 
 # Add Nodes
+graph_builder.add_node("long_term_memory_injector", long_term_memory_injector_node)
 graph_builder.add_node("planner_agent", planner_node)
 graph_builder.add_node("dispatcher", dispatcher_node)
 graph_builder.add_node("attendance_agent", attendance_agent_node)
@@ -272,11 +302,13 @@ graph_builder.add_node("rag_agent", rag_agent_node)
 graph_builder.add_node("analytics_agent", analytics_agent_node)
 graph_builder.add_node("database_agent", database_agent_node)
 graph_builder.add_node("email_agent", email_agent_node)
+graph_builder.add_node("negotiation_agent", negotiation_agent_node)
 graph_builder.add_node("reflection_agent", reflection_agent_node)
 graph_builder.add_node("response_generator", response_generator_node)
 
 # Set Entry Point
-graph_builder.set_entry_point("planner_agent")
+graph_builder.set_entry_point("long_term_memory_injector")
+graph_builder.add_edge("long_term_memory_injector", "planner_agent")
 graph_builder.add_edge("planner_agent", "dispatcher")
 
 # Conditional Dispatch Routing
@@ -293,7 +325,9 @@ graph_builder.add_conditional_edges(
         "analytics_agent": "analytics_agent",
         "database_agent": "database_agent",
         "email_agent": "email_agent",
-        "reflection_agent": "reflection_agent"
+        "negotiation_agent": "negotiation_agent",
+        "reflection_agent": "reflection_agent",
+        END: END
     }
 )
 
@@ -301,11 +335,11 @@ graph_builder.add_conditional_edges(
 for node_name in [
     "attendance_agent", "leave_agent", "faculty_agent", 
     "timetable_agent", "notice_agent", "rag_agent", 
-    "analytics_agent", "database_agent", "email_agent"
+    "analytics_agent", "database_agent", "email_agent",
+    "negotiation_agent"
 ]:
     graph_builder.add_edge(node_name, "dispatcher")
 
-# Reflection routes to response_generator or back to dispatcher
 def route_after_reflection(state: AgentState) -> str:
     if state.get("is_complete", True):
         return "response_generator"
