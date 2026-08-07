@@ -107,6 +107,9 @@ def evaluate_student_leave(request: LeaveEvaluationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from app.graph.dynamic_graph import dynamic_campus_graph
+from app.state.state import AgentState
+
 @app.post("/api/ai/query")
 def execute_agent_workflow(request: QueryRequest):
     """Executes the complete LangGraph Multi-Agent workflow using Qdrant RAG."""
@@ -135,6 +138,54 @@ def execute_agent_workflow(request: QueryRequest):
             "intent": result_state.get("intent"),
             "agent_chain": result_state.get("agent_chain", []),
             "final_response": result_state.get("final_response", "No response generated.")
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ai/dynamic-query")
+def execute_dynamic_multi_agent_workflow(request: QueryRequest):
+    """Executes the dynamic production-grade Multi-Agent workflow with Planning, Reasoning & Reflection."""
+    try:
+        initial_state: AgentState = {
+            "user_name": request.user_name,
+            "user_role": request.user_role,
+            "student_id": "STU1024",
+            "department": request.department or "Computer Science & Engineering",
+            "semester": request.semester or "6th Semester",
+            "section": request.section or "Section A",
+            "query": request.query,
+            "multi_modal_inputs": None,
+            "plan": None,
+            "task_queue": [],
+            "completed_tasks": [],
+            "current_task_id": None,
+            "agent_chain": [],
+            "shared_memory": {},
+            "tool_results": {},
+            "retrieved_documents": [],
+            "reflection_count": 0,
+            "reflection_feedback": None,
+            "needs_human_approval": False,
+            "human_approval_context": None,
+            "human_approved": None,
+            "is_complete": False,
+            "final_response": None,
+            "errors": []
+        }
+        
+        session_thread_id = f"dynamic_{request.user_role}_{request.thread_id or 'default'}"
+        final_state = dynamic_campus_graph.invoke(
+            initial_state,
+            config={"configurable": {"thread_id": session_thread_id}}
+        )
+        
+        return {
+            "query": request.query,
+            "goal": final_state.get("plan", {}).get("goal"),
+            "agent_chain": final_state.get("agent_chain", []),
+            "subtasks": final_state.get("plan", {}).get("tasks", []),
+            "shared_memory": final_state.get("shared_memory", {}),
+            "final_response": final_state.get("final_response")
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
