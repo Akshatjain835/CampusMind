@@ -27,7 +27,8 @@
       "Test Query",
       "Submit my leave application for next week to HOD",
       "I have 72% attendance. I need leave for next week. Can I still sit in the semester exam?",
-      "I have 72% attendance. I need leave for next week. Can I still sit in the semester exam?"
+      "I have 72% attendance. I need leave for next week. Can I still sit in the semester exam?",
+      "New Notice Uploaded: 'Mid-Semester Exam Schedule Announced'. Determine affected students and dispatch notifications."
     ],
     "past_recommendations": [
       "Recommended attending 5 extra classes in Compiler Design lab",
@@ -36,7 +37,8 @@
       "Test Rec",
       "Hello Rahul Sharma!\n\n**Goal:** Evaluate leave request\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currently 72.0% (144/200 cl",
       "Hello Rahul Sharma!\n\n**Goal:** Analyze exam eligibility and leave impact\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currentl",
-      "Hello Rahul Sharma!\n\n**Goal:** Analyze exam eligibility and leave impact\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currentl"
+      "Hello Rahul Sharma!\n\n**Goal:** Analyze exam eligibility and leave impact\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcca **Attendance Overview:** Attendance for Rahul Sharma is currentl",
+      "Hello System Administrator!\n\n**Goal:** Answer general academic query\n\n\n\ud83d\udc64 **Student Profile Memory:** Rahul Sharma (6th Semester)\n\n\ud83d\udcdc **University Regulations:** Clause 14.2: Mandatory 75% attendance fo"
     ],
     "active_leave_applications": [
       {

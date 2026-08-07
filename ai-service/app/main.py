@@ -249,6 +249,47 @@ def approve_human_in_the_loop_action(request: HITLApprovalRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+class MultiModalUploadRequest(BaseModel):
+    user_name: Optional[str] = "Rahul Sharma"
+    user_role: Optional[str] = "student"
+    image_base64: Optional[str] = None
+    file_type: str = "timetable_image"
+    prompt: Optional[str] = "Extract schedule from timetable screenshot and check for conflicts."
+
+@app.post("/api/ai/multimodal-parse")
+def parse_multimodal_document(request: MultiModalUploadRequest):
+    """Processes uploaded timetable images or notice PDFs via Multi-Modal Vision Agent."""
+    try:
+        from app.agents.vision_agent import parse_multimodal_input
+        extracted = parse_multimodal_input(image_base64=request.image_base64, file_type=request.file_type)
+        return extracted
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class EventPublishRequest(BaseModel):
+    event_type: str = "NoticeUploaded"
+    department: str = "Computer Science & Engineering"
+    student_id: Optional[str] = "STU1024"
+    notice_title: Optional[str] = "Mid-Semester Examination Schedule Announced"
+
+@app.post("/api/ai/publish-event")
+def trigger_event_driven_agent(request: EventPublishRequest):
+    """Publishes an administrative event to trigger autonomous background multi-agent pipelines."""
+    try:
+        from app.events.event_dispatcher import event_dispatcher
+        result = event_dispatcher.publish_event(
+            event_type=request.event_type,
+            payload={
+                "department": request.department,
+                "student_id": request.student_id,
+                "notice_title": request.notice_title,
+                "threshold": 75.0
+            }
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 class NoticeGenerationRequest(BaseModel):
     prompt: str
     category: Optional[str] = "Academic"
