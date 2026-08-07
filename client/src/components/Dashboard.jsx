@@ -10,10 +10,11 @@ import { NoticeBoard } from './NoticeBoard';
 import { TimetableGrid } from './TimetableGrid';
 import { MeetingScheduler } from './MeetingScheduler';
 import { DepartmentAnalytics } from './DepartmentAnalytics';
+import { HITLApprovalModal } from './HITLApprovalModal';
 import {
   Bot, LogOut, Calendar, Clock, FileText, CheckSquare,
   Users, Layers, Award, Sparkles, Send, ShieldAlert,
-  Search, BookOpen, AlertCircle, TrendingUp, Cpu
+  Search, BookOpen, AlertCircle, TrendingUp, Cpu, Zap, Activity
 } from 'lucide-react';
 
 const renderFormattedText = (text) => {
@@ -57,6 +58,28 @@ export const Dashboard = () => {
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
   const [chatLogs, setChatLogs] = useState([]);
+  const [hitlContext, setHitlContext] = useState(null);
+
+  const handleHITLApprove = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('/api/ai/human-approve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ approved: true, context: hitlContext })
+      });
+      setHitlContext(null);
+      setChatLogs(prev => [
+        ...prev,
+        { sender: 'agent', role: 'HOD Sanction Authority', text: '✅ **Human-in-the-Loop Sanction Approved!** Resuming multi-agent workflow execution...' }
+      ]);
+    } catch (e) {
+      setHitlContext(null);
+    }
+  };
 
   // Fetch persistent chat history on login
   React.useEffect(() => {
@@ -159,6 +182,9 @@ export const Dashboard = () => {
                 }
                 if (parsed.final_response) {
                   accumulatedResponse = parsed.final_response;
+                }
+                if (parsed.needs_human_approval && parsed.human_approval_context) {
+                  setHitlContext(parsed.human_approval_context);
                 }
 
                 const roleTitle = currentChain.length > 0 
@@ -539,19 +565,26 @@ export const Dashboard = () => {
         </div>
 
         {/* Interactive Student Modals */}
-        <StudentAttendanceModal 
-          isOpen={showAttendanceModal} 
-          onClose={() => setShowAttendanceModal(false)} 
-          user={user} 
+        <StudentAttendanceModal
+          isOpen={showAttendanceModal}
+          onClose={() => setShowAttendanceModal(false)}
+          user={user}
         />
-        <EnrolledCoursesModal 
-          isOpen={showCoursesModal} 
-          onClose={() => setShowCoursesModal(false)} 
-          user={user} 
+        <EnrolledCoursesModal
+          isOpen={showCoursesModal}
+          onClose={() => setShowCoursesModal(false)}
+          user={user}
         />
-        <LeaveModal 
-          isOpen={showLeaveModal} 
-          onClose={() => setShowLeaveModal(false)} 
+        <LeaveModal
+          isOpen={showLeaveModal}
+          onClose={() => setShowLeaveModal(false)}
+        />
+        <HITLApprovalModal
+          isOpen={!!hitlContext}
+          approvalContext={hitlContext}
+          onApprove={handleHITLApprove}
+          onReject={() => setHitlContext(null)}
+          onClose={() => setHitlContext(null)}
         />
         {/* Floating Fixed Bottom-Right AI Assistant Trigger Button */}
         <div style={{ position: 'fixed', bottom: '28px', right: '28px', zIndex: 1000 }}>

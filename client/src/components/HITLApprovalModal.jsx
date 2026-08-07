@@ -1,7 +1,7 @@
 import React from 'react';
 import { ShieldAlert, CheckCircle2, XCircle, AlertCircle, Award } from 'lucide-react';
 
-const HITLApprovalModal = ({ isOpen, onClose, approvalContext, onApprove, onReject }) => {
+export const HITLApprovalModal = ({ isOpen, onClose, approvalContext, onApprove, onReject }) => {
   if (!isOpen || !approvalContext) return null;
 
   const role = approvalContext.approver_role || 'HOD';
