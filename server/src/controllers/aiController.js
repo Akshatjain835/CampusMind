@@ -177,18 +177,24 @@ export const streamAiQuery = async (req, res) => {
         timeout: 30000
       });
 
+      let streamBuffer = '';
+
       response.data.on('data', chunk => {
         const textChunk = chunk.toString();
         res.write(textChunk);
 
-        const lines = textChunk.split('\n');
-        for (const line of lines) {
+        streamBuffer += textChunk;
+        const parts = streamBuffer.split('\n\n');
+        streamBuffer = parts.pop() || '';
+
+        for (const part of parts) {
+          const line = part.trim();
           if (line.startsWith('data: ') && !line.includes('[DONE]')) {
             try {
               const parsed = JSON.parse(line.slice(6));
               if (parsed.final_response) fullFinalResponse = parsed.final_response;
-              if (parsed.chain) lastChain = parsed.chain;
-            } catch (e) {}
+              if (parsed.chain && parsed.chain.length > 0) lastChain = parsed.chain;
+            } catch (e) { }
           }
         }
       });

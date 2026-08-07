@@ -140,14 +140,17 @@ export const Dashboard = () => {
 
         let accumulatedResponse = '';
         let currentChain = [];
+        let buffer = '';
 
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          buffer += decoder.decode(value, { stream: true });
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() || '';
 
-          for (const line of lines) {
+          for (const part of parts) {
+            const line = part.trim();
             if (line.startsWith('data: ') && !line.includes('[DONE]')) {
               try {
                 const parsed = JSON.parse(line.slice(6));

@@ -1,3 +1,9 @@
+import sys
+import io
+
+if hasattr(sys.stdout, 'buffer'):
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -149,9 +155,8 @@ async def stream_agent_workflow(request: QueryRequest):
                 "errors": []
             }
             
-            import uuid
             dept_key = (request.department or "CSE").replace(" ", "_")
-            session_thread_id = f"stream_{dept_key}_{request.user_role}_{request.thread_id or 'default'}_{uuid.uuid4().hex[:8]}"
+            session_thread_id = request.thread_id or f"{dept_key}_{request.user_role}_{request.user_name.replace(' ', '_')}"
 
             for event in dynamic_campus_graph.stream(
                 initial_state,
@@ -222,9 +227,8 @@ def execute_agent_workflow(request: QueryRequest):
             "errors": []
         }
         
-        import uuid
         dept_key = (request.department or "CSE").replace(" ", "_")
-        session_thread_id = f"{dept_key}_{request.user_role}_{request.thread_id or 'default'}_{uuid.uuid4().hex[:8]}"
+        session_thread_id = request.thread_id or f"{dept_key}_{request.user_role}_{request.user_name.replace(' ', '_')}"
         final_state = dynamic_campus_graph.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_thread_id}}

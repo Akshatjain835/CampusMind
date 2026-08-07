@@ -7,6 +7,8 @@ from app.agents.planner_agent import planner_node
 from app.agents.negotiation_agent import negotiation_agent_node
 from app.graph.hitl_handler import check_human_approval_required
 from app.memory.long_term import long_term_memory
+from app.graph.checkpointer import get_persistent_checkpointer
+from app.agents.critic_agent import critic_agent_node
 
 from app.tools.attendance_tool import get_attendance, calculate_projected_attendance
 from app.tools.calendar_tool import find_free_slot, create_calendar_event
@@ -256,10 +258,16 @@ def response_generator_node(state: AgentState) -> AgentState:
         ]
         advice_parts.append(f"1. **Identity Verification:** Your active system role is set to **{state.get('user_role', 'student').upper()}**.")
         advice_parts.append("2. **Academic Dashboard:** You can view your complete course enrollment, attendance history, and department circulars on your dashboard home.")
-    elif any(k in query_lower for k in ["meeting", "schedule", "appoint", "faculty", "slot"]):
-        advice_parts.append("1. **Interactive Meeting Scheduler:** Use the Department Meeting Scheduler module on your dashboard to select faculty and time slots.")
-        advice_parts.append("2. **Calendar Conflict Check:** The Timetable Agent automatically screens timetable slots for zero overlap.")
-        advice_parts.append("3. **Automated Notification:** Submitting a meeting request automatically dispatches Gmail invites with calendar attachments.")
+    elif any(k in query_lower for k in ["timetable", "schedule", "routine", "class time", "slot"]):
+        tt = shared_mem.get("timetable", {})
+        summary_parts = [
+            f"Hello **{user_name}**!",
+            f"**Goal:** Retrieve weekly class schedule and detect free slots\n",
+            f"📅 **Department Timetable Summary:** You are enrolled in **{state.get('department', 'Computer Science & Engineering')}** ({state.get('section', 'Section A')})."
+        ]
+        advice_parts.append("1. **Daily Schedule:** Your classes run Monday to Friday from 09:00 AM to 04:30 PM.")
+        advice_parts.append("2. **Free Slots:** Wednesday 02:00 PM – 04:00 PM and Friday 11:00 AM – 01:00 PM are dedicated free slots for project work & faculty consultations.")
+        advice_parts.append("3. **Timetable Grid:** View your live color-coded weekly timetable grid directly on the dashboard home screen.")
     elif "eligible" in query_lower or "leave" in query_lower or "attendance" in query_lower:
         advice_parts.append("1. **Apply via Leave Portal:** Submit your medical leave application with a valid doctor's certificate within 48 hours to secure Clause 14.2 condonation.")
         advice_parts.append("2. **Schedule Remedial Sessions:** Enroll in extra remedial lab hours with your course coordinator before final exam roll generation.")
@@ -347,6 +355,25 @@ def route_next_agent(state: AgentState) -> str:
         
     return "reflection_agent"
 
+def route_after_reflection(state: AgentState) -> str:
+    if state.get("is_complete", True):
+        return "response_generator"
+    return "dispatcher"
+
+def hod_approval_node(state: AgentState) -> AgentState:
+    """HOD Human-In-The-Loop Approval Node."""
+    agent_chain = list(state.get("agent_chain", []))
+    agent_chain.append("HOD Approval Node")
+    approved = state.get("human_approved", False)
+    ctx = state.get("human_approval_context", "Medical leave condonation sanction required from Head of Department (HOD)")
+    print(f"[HOD Approval Node]: Status = {'Approved' if approved else 'Pending HOD Sanction'} | Context: {ctx}")
+    return {
+        **state,
+        "agent_chain": agent_chain,
+        "needs_human_approval": not approved,
+        "human_approved": approved
+    }
+
 # Build Dynamic LangGraph
 graph_builder = StateGraph(AgentState)
 
@@ -364,7 +391,9 @@ graph_builder.add_node("analytics_agent", analytics_agent_node)
 graph_builder.add_node("database_agent", database_agent_node)
 graph_builder.add_node("email_agent", email_agent_node)
 graph_builder.add_node("negotiation_agent", negotiation_agent_node)
+graph_builder.add_node("hod_approval_node", hod_approval_node)
 graph_builder.add_node("reflection_agent", reflection_agent_node)
+graph_builder.add_node("critic_agent", critic_agent_node)
 graph_builder.add_node("response_generator", response_generator_node)
 
 # Set Entry Point
@@ -401,13 +430,10 @@ for node_name in [
 ]:
     graph_builder.add_edge(node_name, "dispatcher")
 
-def route_after_reflection(state: AgentState) -> str:
-    if state.get("is_complete", True):
-        return "response_generator"
-    return "dispatcher"
+graph_builder.add_edge("reflection_agent", "critic_agent")
 
 graph_builder.add_conditional_edges(
-    "reflection_agent",
+    "critic_agent",
     route_after_reflection,
     {
         "response_generator": "response_generator",
@@ -417,5 +443,10 @@ graph_builder.add_conditional_edges(
 
 graph_builder.add_edge("response_generator", END)
 
-memory_saver = MemorySaver()
-dynamic_campus_graph = graph_builder.compile(checkpointer=memory_saver)
+# Initialize Persistent SQLite Checkpointer
+memory_saver = get_persistent_checkpointer()
+
+dynamic_campus_graph = graph_builder.compile(
+    checkpointer=memory_saver,
+    interrupt_before=["hod_approval_node"]
+)
