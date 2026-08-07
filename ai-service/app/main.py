@@ -41,8 +41,8 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 class QueryRequest(BaseModel):
-    user_name: str = "Rahul Sharma"
-    user_role: str = "student"
+    user_name: Optional[str] = "Rahul Sharma"
+    user_role: Optional[str] = "student"
     department: Optional[str] = "Computer Science & Engineering"
     semester: Optional[str] = "6th Semester"
     section: Optional[str] = "Section A"
@@ -107,8 +107,74 @@ def evaluate_student_leave(request: LeaveEvaluationRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi import Request
+import json
+import asyncio
+
 from app.graph.dynamic_graph import dynamic_campus_graph
 from app.state.state import AgentState
+
+@app.post("/api/ai/stream-query")
+async def stream_agent_workflow(request: QueryRequest):
+    """Streams multi-agent graph execution step-by-step using Server-Sent Events (SSE)."""
+    async def event_generator():
+        try:
+            initial_state: AgentState = {
+                "user_name": request.user_name,
+                "user_role": request.user_role,
+                "student_id": "STU1024",
+                "department": request.department or "Computer Science & Engineering",
+                "semester": request.semester or "6th Semester",
+                "section": request.section or "Section A",
+                "query": request.query,
+                "multi_modal_inputs": None,
+                "plan": None,
+                "task_queue": [],
+                "completed_tasks": [],
+                "current_task_id": None,
+                "agent_chain": [],
+                "shared_memory": {},
+                "tool_results": {},
+                "retrieved_documents": [],
+                "reflection_count": 0,
+                "reflection_feedback": None,
+                "needs_human_approval": False,
+                "human_approval_context": None,
+                "human_approved": None,
+                "is_complete": False,
+                "final_response": None,
+                "errors": []
+            }
+            
+            import uuid
+            dept_key = (request.department or "CSE").replace(" ", "_")
+            session_thread_id = f"stream_{dept_key}_{request.user_role}_{request.thread_id or 'default'}_{uuid.uuid4().hex[:8]}"
+
+            for event in dynamic_campus_graph.stream(
+                initial_state,
+                config={"configurable": {"thread_id": session_thread_id}}
+            ):
+                for node_name, node_state in event.items():
+                    chain = node_state.get("agent_chain", [])
+                    active_agent = chain[-1] if chain else node_name
+                    
+                    data_payload = {
+                        "node": node_name,
+                        "agent": active_agent,
+                        "chain": chain,
+                        "shared_memory_keys": list(node_state.get("shared_memory", {}).keys()),
+                        "final_response": node_state.get("final_response"),
+                        "needs_human_approval": node_state.get("needs_human_approval", False)
+                    }
+                    yield f"data: {json.dumps(data_payload)}\n\n"
+                    await asyncio.sleep(0.05)
+
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/api/ai/query")
 def execute_agent_workflow(request: QueryRequest):
@@ -141,8 +207,9 @@ def execute_agent_workflow(request: QueryRequest):
             "errors": []
         }
         
+        import uuid
         dept_key = (request.department or "CSE").replace(" ", "_")
-        session_thread_id = f"{dept_key}_{request.user_role}_{request.thread_id or 'default'}"
+        session_thread_id = f"{dept_key}_{request.user_role}_{request.thread_id or 'default'}_{uuid.uuid4().hex[:8]}"
         final_state = dynamic_campus_graph.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_thread_id}}

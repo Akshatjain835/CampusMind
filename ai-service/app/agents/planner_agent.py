@@ -71,7 +71,17 @@ def create_fallback_plan(query: str) -> ExecutionPlan:
     query_lower = query.lower()
     tasks: List[SubTask] = []
     
-    if "eligible" in query_lower or "attendance" in query_lower and "leave" in query_lower:
+    if any(k in query_lower for k in ["name", "who am i", "my name", "profile", "identity"]):
+        tasks = [
+            SubTask(id="task_1", agent="database_agent", description="Fetch user profile details", dependencies=[])
+        ]
+        return ExecutionPlan(
+            goal="Identify active student user identity and profile",
+            reasoning="Direct memory/profile lookup query",
+            requires_parallel_execution=False,
+            tasks=tasks
+        )
+    elif "eligible" in query_lower or ("attendance" in query_lower and "leave" in query_lower):
         tasks = [
             SubTask(id="task_1", agent="attendance_agent", description="Fetch current attendance stats", dependencies=[]),
             SubTask(id="task_2", agent="rag_agent", description="Query attendance regulations", dependencies=[]),

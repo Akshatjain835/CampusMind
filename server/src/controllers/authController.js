@@ -112,10 +112,10 @@ export const updateProfile = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const { 
-      name, email, password, phone, bio, profilePic, 
-      resumeUrl, githubUrl, linkedinUrl, department, 
-      rollNumber, section, semester, designation, specialization 
+    const {
+      name, email, password, phone, bio, profilePic,
+      resumeUrl, githubUrl, linkedinUrl, department,
+      rollNumber, section, semester, designation, specialization
     } = req.body;
 
     // Normal Editable Details for All Users

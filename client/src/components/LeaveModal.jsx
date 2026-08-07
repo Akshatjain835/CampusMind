@@ -77,10 +77,10 @@ export const LeaveModal = ({ isOpen, onClose, onLeaveApplied }) => {
         padding: '32px',
         position: 'relative'
       }}>
-        
+
         {/* Close Button */}
-        <button 
-          onClick={onClose} 
+        <button
+          onClick={onClose}
           style={{
             position: 'absolute',
             top: '20px',

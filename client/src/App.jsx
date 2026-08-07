@@ -67,7 +67,7 @@ class ErrorBoundary extends Component {
               An unexpected display glitch occurred, but your department database records remain completely intact and safe.
             </p>
 
-            <button 
+            <button
               onClick={this.handleReload}
               className="btn btn-primary"
               style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 24px' }}

@@ -16,6 +16,38 @@ import {
   Search, BookOpen, AlertCircle, TrendingUp, Cpu
 } from 'lucide-react';
 
+const renderFormattedText = (text) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+  return lines.map((line, idx) => {
+    const parts = line.split(/(\*\*.*?\*\*)/g);
+    const lineContent = parts.map((part, pIdx) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        return <strong key={pIdx} style={{ color: '#818cf8', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+      }
+      return part;
+    });
+
+    if (line.trim() === '') {
+      return <div key={idx} style={{ height: '6px' }} />;
+    }
+
+    if (line.startsWith('•') || line.startsWith('-')) {
+      return (
+        <div key={idx} style={{ paddingLeft: '14px', margin: '3px 0', color: '#e2e8f0' }}>
+          {lineContent}
+        </div>
+      );
+    }
+
+    return (
+      <div key={idx} style={{ margin: '3px 0', color: '#f1f5f9' }}>
+        {lineContent}
+      </div>
+    );
+  });
+};
+
 export const Dashboard = () => {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
@@ -24,13 +56,7 @@ export const Dashboard = () => {
   const [showCoursesModal, setShowCoursesModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [chatMessage, setChatMessage] = useState('');
-  const [chatLogs, setChatLogs] = useState([
-    {
-      sender: 'agent',
-      role: 'Router & RAG Agent',
-      text: `Hello ${user?.name || 'User'}! I am your DepartmentAI Academic Secretary. How can I assist you today? You can ask me about attendance rules, apply for leaves, schedule meetings, or query NBA/NAAC accreditation manuals.`
-    }
-  ]);
+  const [chatLogs, setChatLogs] = useState([]);
 
   // Fetch persistent chat history on login
   React.useEffect(() => {
@@ -82,7 +108,7 @@ export const Dashboard = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/ai/query', {
+      const response = await fetch('/api/ai/stream-query', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -95,35 +121,91 @@ export const Dashboard = () => {
         })
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setChatLogs(prev => [
-          ...prev,
-          {
-            sender: 'agent',
-            role: data.role || 'LangGraph AI Agent',
-            text: data.text || data.final_response || 'No response returned.'
+      if (response.ok && response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        
+        let placeholderIndex = -1;
+        setChatLogs(prev => {
+          placeholderIndex = prev.length;
+          return [
+            ...prev,
+            {
+              sender: 'agent',
+              role: 'Autonomous Multi-Agent System',
+              text: '🔄 *Initializing multi-agent graph execution...*'
+            }
+          ];
+        });
+
+        let accumulatedResponse = '';
+        let currentChain = [];
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ') && !line.includes('[DONE]')) {
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                if (parsed.chain && parsed.chain.length > 0) {
+                  currentChain = parsed.chain;
+                }
+                if (parsed.final_response) {
+                  accumulatedResponse = parsed.final_response;
+                }
+
+                const roleTitle = currentChain.length > 0 
+                  ? `Multi-Agent System (${currentChain.join(' ➔ ')})`
+                  : 'Autonomous Agent';
+
+                const displayContent = accumulatedResponse || `🔄 *Executing Node: ${parsed.agent || parsed.node || 'Processing'}...*`;
+
+                setChatLogs(prev => {
+                  const updated = [...prev];
+                  if (updated.length > 0) {
+                    updated[updated.length - 1] = {
+                      sender: 'agent',
+                      role: roleTitle,
+                      text: displayContent
+                    };
+                  }
+                  return updated;
+                });
+              } catch (e) {}
+            }
           }
-        ]);
+        }
       } else {
-        setChatLogs(prev => [
-          ...prev,
-          {
-            sender: 'agent',
-            role: 'System Notice',
-            text: `ChromaDB & LangGraph Microservice active! Ensure FastAPI server is running via 'uvicorn app.main:app --port 8000' in ai-service.`
-          }
-        ]);
+        const fallbackRes = await fetch('/api/ai/query', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            query: userText,
+            user_name: user?.name || 'User',
+            user_role: user?.role || 'student'
+          })
+        });
+        if (fallbackRes.ok) {
+          const data = await fallbackRes.json();
+          setChatLogs(prev => [
+            ...prev,
+            {
+              sender: 'agent',
+              role: data.role || 'LangGraph AI Agent',
+              text: data.text || data.final_response || 'No response returned.'
+            }
+          ]);
+        }
       }
     } catch (err) {
-      setChatLogs(prev => [
-        ...prev,
-        {
-          sender: 'agent',
-          role: 'System Notice',
-          text: `Processing query "${userText}"... AI Service gateway endpoint ready.`
-        }
-      ]);
+      console.error('Streaming connection error:', err);
     }
   };
 
@@ -136,13 +218,7 @@ export const Dashboard = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
-        setChatLogs([
-          {
-            sender: 'agent',
-            role: 'Router & RAG Agent',
-            text: `Hello ${user?.name || 'User'}! I am your DepartmentAI Academic Secretary. How can I assist you today? You can ask me about attendance rules, apply for leaves, schedule meetings, or query NBA/NAAC accreditation manuals.`
-          }
-        ]);
+        setChatLogs([]);
       }
     } catch (err) {
       console.error('Failed to clear chat history:', err);
@@ -330,35 +406,60 @@ export const Dashboard = () => {
 
             {/* Chat Messages */}
             <div style={{
-              background: 'rgba(0, 0, 0, 0.4)',
+              background: 'rgba(15, 23, 42, 0.65)',
               borderRadius: '12px',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
               padding: '20px',
-              maxHeight: '300px',
+              maxHeight: '420px',
               overflowY: 'auto',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px',
+              gap: '16px',
               marginBottom: '16px'
             }}>
+              {chatLogs.length === 0 && (
+                <div style={{ textAlign: 'center', color: '#94a3b8', padding: '30px 20px', fontSize: '0.92rem' }}>
+                  <div style={{ fontSize: '1.8rem', marginBottom: '8px' }}>🤖</div>
+                  <div style={{ fontWeight: 600, color: '#f8fafc', marginBottom: '4px' }}>DepartmentAI Academic Secretary</div>
+                  <div>Ask about attendance rules, leave applications, faculty scheduling, or university regulations.</div>
+                </div>
+              )}
               {chatLogs.map((msg, index) => (
                 <div
                   key={index}
                   style={{
                     alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-                    maxWidth: '80%',
-                    background: msg.sender === 'user' ? 'var(--primary)' : 'rgba(255, 255, 255, 0.07)',
-                    padding: '12px 16px',
-                    borderRadius: '14px',
-                    fontSize: '0.9rem',
-                    lineHeight: 1.5
+                    maxWidth: '88%',
+                    background: msg.sender === 'user' 
+                      ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' 
+                      : 'rgba(30, 41, 59, 0.85)',
+                    border: msg.sender === 'user' ? 'none' : '1px solid rgba(129, 140, 248, 0.25)',
+                    padding: '14px 18px',
+                    borderRadius: '16px',
+                    fontSize: '0.92rem',
+                    lineHeight: 1.65,
+                    boxShadow: '0 8px 25px rgba(0,0,0,0.3)',
+                    backdropFilter: 'blur(12px)'
                   }}
                 >
                   {msg.role && (
-                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#a5b4fc', marginBottom: '4px' }}>
+                    <div style={{
+                      fontSize: '0.78rem',
+                      fontWeight: 800,
+                      color: '#34d399',
+                      marginBottom: '8px',
+                      paddingBottom: '4px',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      letterSpacing: '0.02em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      <Sparkles size={13} color="#34d399" />
                       {msg.role}
                     </div>
                   )}
-                  {msg.text}
+                  {renderFormattedText(msg.text)}
                 </div>
               ))}
             </div>
@@ -449,6 +550,28 @@ export const Dashboard = () => {
           isOpen={showLeaveModal} 
           onClose={() => setShowLeaveModal(false)} 
         />
+        {/* Floating Fixed Bottom-Right AI Assistant Trigger Button */}
+        <div style={{ position: 'fixed', bottom: '28px', right: '28px', zIndex: 1000 }}>
+          <button
+            onClick={() => setAiChatOpen(!aiChatOpen)}
+            className="btn btn-primary"
+            style={{
+              borderRadius: '50px',
+              padding: '14px 22px',
+              boxShadow: '0 10px 30px rgba(99, 102, 241, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              fontWeight: 700,
+              fontSize: '0.95rem',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              cursor: 'pointer'
+            }}
+          >
+            <Sparkles size={20} className="animate-pulse" />
+            {aiChatOpen ? 'Close AI Assistant' : 'AI Multi-Agent Secretary'}
+          </button>
+        </div>
 
       </main>
     </div>
