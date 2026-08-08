@@ -34,11 +34,24 @@ def check_human_approval_required(state: AgentState) -> AgentState:
         }
         
     query_lower = query.lower()
-    is_sensitive = any(k in query_lower for k in ["leave", "meeting", "schedule", "clearance", "condonation"])
+    
+    # Explicit action verbs indicating a direct submission/action request
+    is_action_command = any(k in query_lower for k in [
+        "apply", "submit", "sanction", "approve", "book", "override", "clearance"
+    ])
+    
+    # Informational question phrases indicating a inquiry rather than an immediate submission
+    is_informational_query = any(k in query_lower for k in [
+        "can i", "what if", "what happens", "how to", "is it possible", "tell me", "check",
+        "eligibility", "policy", "rules", "guidelines", "will happen"
+    ])
+    
+    # HITL trigger ONLY for explicit action commands that are NOT purely informational inquiries
+    is_sensitive = is_action_command and not is_informational_query
     
     if is_sensitive and human_approved is None:
         role_type = classify_hitl_action(query, "")
-        print(f"[HITL Intercept] Sensitive operation detected. Assigned Authority: {role_type}")
+        print(f"[HITL Intercept] Action command detected. Assigned Authority: {role_type}")
         return {
             **state,
             "needs_human_approval": True,

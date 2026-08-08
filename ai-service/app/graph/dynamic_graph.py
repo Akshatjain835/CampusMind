@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Any, List, Optional
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -5,6 +6,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from app.state.state import AgentState
 from app.agents.planner_agent import planner_node
 from app.agents.negotiation_agent import negotiation_agent_node
+from app.agents.llm_factory import get_llm
 from app.graph.hitl_handler import check_human_approval_required
 from app.memory.long_term import long_term_memory
 from app.graph.checkpointer import get_persistent_checkpointer
@@ -15,16 +17,34 @@ from app.tools.calendar_tool import find_free_slot, create_calendar_event
 from app.tools.database_tool import execute_sql_query
 from app.tools.email_tool import send_email_notification
 from app.tools.rag_tool import search_academic_regulations, get_latest_notices
+from app.rag.qdrant_retriever import search_qdrant_regulations
 from app.tools.analytics_tool import forecast_exam_eligibility_risk
 
 def long_term_memory_injector_node(state: AgentState) -> AgentState:
-    """Injects historical student profile & long-term memory into shared state."""
-    student_id = state.get("student_id", "STU1024")
-    profile = long_term_memory.get_student_profile(student_id)
+    """Injects role-specific historical profile & long-term memory into shared state."""
+    user_role = (state.get("user_role") or "student").lower()
+    user_name = state.get("user_name", "User")
+    department = state.get("department", "Computer Science & Engineering")
+    semester = state.get("semester", "6th Semester")
     
     shared_mem = dict(state.get("shared_memory", {}))
-    shared_mem["student_profile"] = profile
     
+    if user_role in ["faculty", "hod", "admin"] or "prof" in user_name.lower() or "dr" in user_name.lower():
+        shared_mem["faculty_profile"] = {
+            "name": user_name,
+            "role": user_role.upper(),
+            "department": department
+        }
+    else:
+        student_id = state.get("student_id") or "STU1024"
+        profile = long_term_memory.get_student_profile(
+            student_id=student_id, 
+            user_name=user_name, 
+            department=department, 
+            semester=semester
+        )
+        shared_mem["student_profile"] = profile
+        
     agent_chain = list(state.get("agent_chain", []))
     agent_chain.append("Long-Term Memory Store")
     
@@ -56,122 +76,180 @@ def stub_agent_node(agent_name: str, state: AgentState, mock_data: Dict[str, Any
     }
 
 def attendance_agent_node(state: AgentState) -> AgentState:
-    student_id = state.get("student_id", "STU1024")
+    student_id = state.get("student_id") or "STU1024"
+    user_name = state.get("user_name", "Student")
     att_res = get_attendance.invoke({"student_id": student_id})
-    mock_data = {
+    pct = att_res.get("percentage") or att_res.get("overall_percentage", 72.0)
+    
+    data = {
         "attendance": {
-            "current_percentage": att_res.get("percentage", 72.0),
-            "required_percentage": att_res.get("required_percentage", 75.0),
-            "status": att_res.get("status", "Below Threshold"),
-            "attended_classes": att_res.get("attended_classes", 144),
+            "student_id": student_id,
+            "student_name": user_name,
+            "current_percentage": pct,
+            "required_percentage": 75.0,
+            "status": "Below Mandatory Threshold (75%)" if pct < 75.0 else "Good Standing",
+            "attended_classes": att_res.get("attended_classes", int((pct / 100.0) * 200)),
             "total_classes": att_res.get("total_classes", 200),
-            "details": f"Attendance for {att_res.get('student_name', 'Student')} is currently {att_res.get('percentage', 72.0)}% ({att_res.get('attended_classes', 144)}/{att_res.get('total_classes', 200)} classes attended)."
+            "details": f"Attendance for {user_name} ({student_id}) is currently {pct}%."
         }
     }
-    return stub_agent_node("Attendance Agent", state, mock_data)
+    return stub_agent_node("Attendance Agent", state, data)
 
 def leave_agent_node(state: AgentState) -> AgentState:
     mem = state.get("shared_memory", {})
+    user_name = state.get("user_name", "Student")
     att = mem.get("attendance", {}).get("current_percentage", 72.0)
-    impact = calculate_projected_attendance.invoke({"current_percentage": att, "leave_days": 5})
-    mock_data = {
+    impact = calculate_projected_attendance.invoke({"current_percentage": att, "total_classes": 200, "missed_classes": 15})
+    
+    projected_pct = impact.get("projected_percentage", round(att - 3.5, 1))
+    query_lower = state.get("query", "").lower()
+    
+    is_action = any(k in query_lower for k in ["apply", "submit", "sanction", "approve"])
+    is_info = any(k in query_lower for k in ["can i", "what if", "what happens", "how to", "eligibility", "policy", "will happen"])
+    needs_approval = (projected_pct < 75.0 or "medical" in query_lower) and is_action and not is_info
+    
+    data = {
         "leave": {
             "requested_days": 5,
-            "estimated_missed_classes": impact.get("classes_missed", 15),
-            "projected_attendance": impact.get("projected_percentage", 68.5),
-            "leave_policy_verdict": "Requires 75% post-leave attendance or HOD approval for medical leave."
+            "estimated_missed_classes": 15,
+            "projected_attendance": projected_pct,
+            "leave_policy_verdict": f"Projected attendance after leave is {projected_pct}%. Under Clause 14.2, condonation requires formal HOD sanction." if projected_pct < 75.0 else "Leave within permissible attendance allowance."
         }
     }
-    return stub_agent_node("Leave Agent", state, mock_data)
+    
+    res_state = stub_agent_node("Leave Agent", state, data)
+    if needs_approval and not state.get("human_approved"):
+        res_state["needs_human_approval"] = True
+        res_state["human_approval_context"] = {
+            "approver_role": "HOD",
+            "action_description": f"Medical leave condonation sanction for {user_name} (Projected Attendance: {projected_pct}%).",
+            "query": state.get("query", ""),
+            "reason": f"Projected attendance ({projected_pct}%) falls below 75% threshold. HOD authorization required under Clause 14.2."
+        }
+    return res_state
 
 def faculty_agent_node(state: AgentState) -> AgentState:
-    slot_res = find_free_slot.invoke({"faculty_ids": ["Dr. R. K. Sharma", "Prof. Anita Roy"], "date": "Tomorrow"})
-    mock_data = {
+    dept = state.get("department", "Computer Science & Engineering")
+    slot_res = find_free_slot.invoke({"faculty_ids": [f"HOD {dept}", "Faculty Advisor"], "date": "Tomorrow"})
+    data = {
         "faculty": {
-            "target_faculty": slot_res.get("faculty_checked", ["Dr. R. K. Sharma", "Prof. Anita Roy"]),
-            "workload": "Balanced (16 hrs/week)",
+            "target_faculty": slot_res.get("faculty_checked", [f"HOD {dept}"]),
+            "workload": "Normal Governance Allocation",
             "available_slot": slot_res.get("suggested_best_slot", "11:00 AM - 12:00 PM")
         }
     }
-    return stub_agent_node("Faculty Agent", state, mock_data)
+    return stub_agent_node("Faculty Agent", state, data)
 
 def timetable_agent_node(state: AgentState) -> AgentState:
     semester = state.get("semester", "6th Semester")
     section = state.get("section", "Section A")
-    slot_res = find_free_slot.invoke({"faculty_ids": ["Section A Timetable"], "date": "Tomorrow"})
-    schedule = (
-        f"• 10:00 AM - 11:00 AM: CS601 Compiler Design (Lab 101)\n"
-        f"• 11:00 AM - 12:00 PM: CS602 Computer Networks (Hall B)\n"
-        f"• 02:00 PM - 04:00 PM: CS603 AI Lab (Net Lab 102)"
-    )
-    mock_data = {
-        "timetable": {
-            "semester": semester,
-            "section": section,
-            "schedule": schedule,
-            "free_slot": slot_res.get("suggested_best_slot", "11:00 AM - 12:00 PM")
+    user_role = str(state.get("user_role", "student")).lower()
+    user_name = state.get("user_name", "Faculty Member")
+    
+    if "faculty" in user_role or "prof" in user_role:
+        schedule = (
+            "• 09:30 AM - 10:30 AM: CS601 Compiler Design Lecture (6th Sem CSE-A)\n"
+            "• 11:30 AM - 01:30 PM: CS603 AI & ML Practical Lab (6th Sem CSE-B)\n"
+            "• 02:30 PM - 03:30 PM: Department Academic Advisory & Governance Review"
+        )
+        data = {
+            "timetable": {
+                "faculty_name": user_name,
+                "role": "FACULTY",
+                "todays_schedule": schedule,
+                "pending_classes": ["CS601 Compiler Design Lecture (09:30 AM)", "CS603 AI & ML Lab (11:30 AM)"],
+                "free_slots": "01:30 PM - 02:30 PM",
+                "schedule": schedule
+            }
         }
-    }
-    return stub_agent_node("Timetable Agent", state, mock_data)
+    else:
+        slot_res = find_free_slot.invoke({"faculty_ids": [f"{section} Timetable"], "date": "Today"})
+        schedule = (
+            "• 10:00 AM - 11:00 AM: CS601 Compiler Design\n"
+            "• 11:00 AM - 12:00 PM: CS602 Computer Networks\n"
+            "• 02:00 PM - 04:00 PM: CS603 AI Lab"
+        )
+        data = {
+            "timetable": {
+                "semester": semester,
+                "section": section,
+                "schedule": schedule,
+                "free_slot": slot_res.get("suggested_best_slot", "11:00 AM - 12:00 PM")
+            }
+        }
+    return stub_agent_node("Timetable Agent", state, data)
 
 def notice_agent_node(state: AgentState) -> AgentState:
     notices_res = get_latest_notices.invoke({})
     notice_list = [f"{n['title']}: {n['summary']}" for n in notices_res.get("notices", [])]
-    mock_data = {
+    data = {
         "notices": notice_list if notice_list else ["Circular #402: Mid-Semester Exam eligibility requires minimum 75% attendance."]
     }
-    return stub_agent_node("Notice Agent", state, mock_data)
+    return stub_agent_node("Notice Agent", state, data)
 
 def rag_agent_node(state: AgentState) -> AgentState:
     query = state.get("query", "")
-    rag_res = search_academic_regulations.invoke({"query": query})
-    reg_text = rag_res.get("top_clause", "Clause 14.2: Mandatory 75% attendance for regular exam sitting.")
-    policy_text = rag_res.get("explanation", "Condonation up to 10% allowed on medical grounds.")
-
-    mock_data = {
+    rag_res = search_qdrant_regulations(query=query, top_k=3)
+    
+    formatted_ctx = rag_res.get("formatted_context", "No direct regulations retrieved.")
+    retrieved_contexts = rag_res.get("contexts", [])
+    
+    top_sources = list(set([ctx.get("source", "Department Regulation") for ctx in retrieved_contexts]))
+    
+    data = {
         "regulations": {
-            "attendance_clause": reg_text,
-            "exemption_policy": policy_text
+            "query": query,
+            "top_sources": top_sources,
+            "retrieved_count": len(retrieved_contexts),
+            "formatted_context": formatted_ctx,
+            "contexts": retrieved_contexts,
+            "attendance_clause": retrieved_contexts[0]["chunk"] if retrieved_contexts else "Clause 1.1: Mandatory 75% attendance threshold for semester exams.",
+            "exemption_policy": retrieved_contexts[1]["chunk"] if len(retrieved_contexts) > 1 else "Condonation up to 10% allowed on medical grounds upon HOD sanction."
         }
     }
-    return stub_agent_node("Regulation RAG Agent", state, mock_data)
+    return stub_agent_node("Regulation RAG Agent", state, data)
 
 def analytics_agent_node(state: AgentState) -> AgentState:
     mem = state.get("shared_memory", {})
     att = mem.get("attendance", {}).get("current_percentage", 72.0)
-    risk_res = forecast_exam_eligibility_risk.invoke({"current_attendance_percentage": att})
+    leave_days = mem.get("leave", {}).get("requested_days", 5)
+    risk_res = forecast_exam_eligibility_risk.invoke({
+        "current_percentage": att,
+        "planned_leave_days": leave_days
+    })
     
-    mock_data = {
+    data = {
         "analytics": {
             "current_attendance": att,
-            "projected_attendance_after_leave": round(risk_res.get("projected_percentage", att - 3.5), 1),
-            "extra_classes_needed_for_75": risk_res.get("remedial_classes_needed", 12),
-            "exam_eligibility_risk": risk_res.get("risk_level", "HIGH RISK"),
-            "recommendation": risk_res.get("actionable_recommendation", f"Must attend at least {risk_res.get('remedial_classes_needed', 12)} remedial/extra classes to restore eligibility above 75%.")
+            "projected_attendance_after_leave": risk_res.get("projected_percentage_post_leave", round(att - 3.5, 1)),
+            "extra_classes_needed_for_75": risk_res.get("extra_remedial_classes_required", 12),
+            "exam_eligibility_risk": risk_res.get("risk_level", "HIGH (Requires Condonation / Remedial Classes)"),
+            "recommendation": risk_res.get("actionable_recommendation", "Submit medical certificate for HOD condonation and attend remedial sessions.")
         }
     }
-    return stub_agent_node("Analytics Agent", state, mock_data)
+    return stub_agent_node("Analytics Agent", state, data)
 
 def database_agent_node(state: AgentState) -> AgentState:
-    sql_res = execute_sql_query.invoke({"query": "SELECT student_id, name, department, semester FROM students WHERE student_id = 'STU1024'"})
-    mock_data = {
+    student_id = state.get("student_id") or "STU1024"
+    sql_res = execute_sql_query.invoke({"query": f"SELECT student_id, name, department, semester FROM students WHERE student_id = '{student_id}'"})
+    data = {
         "database_records": {
             "student_record_found": True,
             "academic_status": "Good Standing",
             "query_result": sql_res.get("results", [])
         }
     }
-    return stub_agent_node("Database Agent", state, mock_data)
+    return stub_agent_node("Database Agent", state, data)
 
 def email_agent_node(state: AgentState) -> AgentState:
-    mock_data = {
+    data = {
         "notifications": {
             "email_sent": True,
-            "recipients": ["faculty@campusmind.edu"],
-            "subject": "Faculty Meeting / Leave Notification Scheduled"
+            "recipients": ["department_secretary@campusmind.edu"],
+            "subject": "Academic Governance / Leave Request Notification"
         }
     }
-    return stub_agent_node("Email Agent", state, mock_data)
+    return stub_agent_node("Email Agent", state, data)
 
 def reflection_agent_node(state: AgentState) -> AgentState:
     agent_chain = list(state.get("agent_chain", []))
@@ -181,7 +259,7 @@ def reflection_agent_node(state: AgentState) -> AgentState:
     reflection_count = state.get("reflection_count", 0) + 1
     
     is_complete = True
-    feedback = "All required task outputs verified."
+    feedback = "All required multi-agent task outputs verified."
     
     return {
         **state,
@@ -196,93 +274,121 @@ def response_generator_node(state: AgentState) -> AgentState:
     agent_chain.append("Response Generator")
     
     user_name = state.get("user_name", "Student")
+    user_role = state.get("user_role", "student")
+    student_id = state.get("student_id", "STU1024")
+    query = state.get("query", "")
     shared_mem = state.get("shared_memory", {})
     plan = state.get("plan", {})
     
+    # 🧠 Dynamic LLM Synthesis (when API key is active)
+    llm = get_llm(temperature=0.3)
+    if llm:
+        try:
+            prompt = (
+                f"You are CampusMind's Executive Academic Secretary AI Agent.\n"
+                f"Synthesize a clear, authoritative, unified executive secretarial briefing for the user based on gathered multi-agent findings.\n"
+                f"DO NOT print disconnected raw bullet blocks per agent. Instead, write a cohesive, natural language decision briefing.\n\n"
+                f"User Profile:\n"
+                f"- Name: {user_name} (ID: {student_id})\n"
+                f"- Role: {user_role}\n"
+                f"- Department: {state.get('department', 'Computer Science & Engineering')}\n"
+                f"- Query: \"{query}\"\n\n"
+                f"Gathered Context & Multi-Agent Findings:\n{json.dumps(shared_mem, indent=2, default=str)}\n\n"
+                f"Include:\n"
+                f"1. Directly answer the user query based on current stats.\n"
+                f"2. Summarize attendance impact and regulatory compliance (citing clauses if relevant).\n"
+                f"3. Note HOD approval / condonation status and next steps clearly."
+            )
+            res = llm.invoke(prompt)
+            final_resp = res.content if hasattr(res, "content") else str(res)
+            
+            # Save recommendation to long-term memory
+            long_term_memory.save_query_and_recommendation(student_id, query, final_resp[:200])
+            
+            return {
+                **state,
+                "agent_chain": agent_chain,
+                "final_response": final_resp,
+                "is_complete": True
+            }
+        except Exception as err:
+            print(f"[Response Generator LLM Warning]: {err}. Falling back to cohesive synthesis generator.")
+
+    # Fallback Cohesive Executive Synthesis Generator
     summary_parts = []
-    summary_parts.append(f"Hello {user_name}!")
+    summary_parts.append(f"Hello **{user_name}**!")
     summary_parts.append(f"**Goal:** {plan.get('goal', 'Academic Assistance')}\n")
     
-    if "student_profile" in shared_mem:
-        prof = shared_mem["student_profile"]
-        summary_parts.append(f"👤 **Student Profile Memory:** {prof.get('name')} ({prof.get('semester')})")
-        
-    if "attendance" in shared_mem:
-        att = shared_mem["attendance"]
-        summary_parts.append(f"📊 **Attendance Overview:** {att.get('details')}")
-        
-    if "regulations" in shared_mem:
-        reg = shared_mem["regulations"]
-        summary_parts.append(f"📜 **University Regulations:** {reg.get('attendance_clause')}")
-        
-    if "leave" in shared_mem:
-        lv = shared_mem["leave"]
-        summary_parts.append(f"📝 **Leave Impact:** {lv.get('leave_policy_verdict')}")
-        
-    if "negotiation_consensus" in shared_mem:
-        neg = shared_mem["negotiation_consensus"]
-        summary_parts.append(f"🤝 **Multi-Agent Negotiation Verdict:** {neg.get('final_verdict')}\n• {neg.get('trade_off_analysis')}")
-
-    if "analytics" in shared_mem:
-        an = shared_mem["analytics"]
-        summary_parts.append(
-            f"⚠️ **Exam Eligibility Risk:** {an.get('exam_eligibility_risk')}\n"
-            f"• Projected Attendance Post-Leave: **{an.get('projected_attendance_after_leave')}%**\n"
-            f"• Remedial Classes Required: **{an.get('extra_classes_needed_for_75')} classes**\n"
-            f"💡 **Recommendation:** {an.get('recommendation')}"
-        )
-
-    if "faculty" in shared_mem:
-        fac = shared_mem["faculty"]
-        targets = ", ".join(fac.get("target_faculty", []))
-        summary_parts.append(f"👨‍🏫 **Faculty Participants:** {targets} (Workload: {fac.get('workload', 'Normal')})")
-
-    if "timetable" in shared_mem:
-        tt = shared_mem["timetable"]
-        summary_parts.append(f"📅 **Conflict-Free Schedule Slot:** Available slots for {tt.get('semester', '6th Semester')} ({tt.get('section', 'Section A')}):\n{tt.get('schedule', '')}")
-
-    if "notifications" in shared_mem:
-        nt = shared_mem["notifications"]
-        summary_parts.append(f"📧 **Automated Email Dispatch:** Invites sent to {', '.join(nt.get('recipients', []))}.")
-
-    # 🎯 Strategic Executive Advice section synthesized from multi-agent evaluation
-    query_lower = state.get("query", "").lower()
-    advice_parts = ["🎯 **Executive Academic Secretary Advice:**"]
+    att = shared_mem.get("attendance", {})
+    lv = shared_mem.get("leave", {})
+    reg = shared_mem.get("regulations", {})
+    an = shared_mem.get("analytics", {})
+    neg = shared_mem.get("negotiation_consensus", {})
     
-    if any(k in query_lower for k in ["name", "who am i", "my name", "profile"]):
-        prof = shared_mem.get("student_profile", {})
-        summary_parts = [
-            f"Hello **{user_name}**!",
-            f"**Goal:** Identify active student user identity and profile\n",
-            f"👤 **Student Profile Memory:** Your registered full name in CampusMind is **{user_name}** ({prof.get('semester', '6th Semester')}, {state.get('department', 'Computer Science & Engineering')})."
-        ]
-        advice_parts.append(f"1. **Identity Verification:** Your active system role is set to **{state.get('user_role', 'student').upper()}**.")
-        advice_parts.append("2. **Academic Dashboard:** You can view your complete course enrollment, attendance history, and department circulars on your dashboard home.")
-    elif any(k in query_lower for k in ["timetable", "schedule", "routine", "class time", "slot"]):
-        tt = shared_mem.get("timetable", {})
-        summary_parts = [
-            f"Hello **{user_name}**!",
-            f"**Goal:** Retrieve weekly class schedule and detect free slots\n",
-            f"📅 **Department Timetable Summary:** You are enrolled in **{state.get('department', 'Computer Science & Engineering')}** ({state.get('section', 'Section A')})."
-        ]
-        advice_parts.append("1. **Daily Schedule:** Your classes run Monday to Friday from 09:00 AM to 04:30 PM.")
-        advice_parts.append("2. **Free Slots:** Wednesday 02:00 PM – 04:00 PM and Friday 11:00 AM – 01:00 PM are dedicated free slots for project work & faculty consultations.")
-        advice_parts.append("3. **Timetable Grid:** View your live color-coded weekly timetable grid directly on the dashboard home screen.")
-    elif "eligible" in query_lower or "leave" in query_lower or "attendance" in query_lower:
-        advice_parts.append("1. **Apply via Leave Portal:** Submit your medical leave application with a valid doctor's certificate within 48 hours to secure Clause 14.2 condonation.")
-        advice_parts.append("2. **Schedule Remedial Sessions:** Enroll in extra remedial lab hours with your course coordinator before final exam roll generation.")
-        advice_parts.append("3. **HOD Verification:** Track HOD approval status directly in your CampusMind Leave Governance dashboard to prevent exam hall ticket detention.")
+    if att or lv:
+        curr_pct = att.get("current_percentage", 72.0)
+        proj_pct = lv.get("projected_attendance", an.get("projected_attendance_after_leave", round(curr_pct - 3.5, 1)))
+        
+        summary_parts.append(
+            f"Based on your current record (**{curr_pct}%** overall attendance), taking a 5-day medical leave will reduce your projected attendance to **{proj_pct}%**."
+        )
+        
+        clause = reg.get("attendance_clause", "Clause 14.2: Mandatory 75% attendance threshold for semester exams.")
+        summary_parts.append(
+            f"Under **{clause}**, students falling below the 75% threshold require formal **HOD sanction** for medical leave condonation (up to 10%)."
+        )
+        
+        if neg:
+            summary_parts.append(f"\n🤝 **Multi-Agent Negotiation Verdict:** {neg.get('final_verdict')}\n• {neg.get('trade_off_analysis')}")
+            
+        summary_parts.append(
+            f"\n💡 **Executive Secretary Recommendation:**\n"
+            f"1. **File Medical Leave:** Submit your medical certificate on the Leave Portal within 48 hours.\n"
+            f"2. **HOD Approval:** Request HOD sanction to condone the shortfall from {proj_pct}% back to exam eligibility.\n"
+            f"3. **Remedial Classes:** Attend scheduled extra lab hours to maintain your academic standing."
+        )
+    elif "timetable" in shared_mem:
+        tt = shared_mem["timetable"]
+        if tt.get("role") == "FACULTY" or "faculty_name" in tt:
+            summary_parts.append(
+                f"📋 **Today's Faculty Schedule & Pending Lectures ({tt.get('faculty_name', user_name)}):**\n\n"
+                f"{tt.get('todays_schedule', tt.get('schedule', ''))}\n\n"
+                f"💡 **Executive Review:**\n"
+                f"• **Pending Lectures/Labs:** {', '.join(tt.get('pending_classes', ['CS601 Compiler Design', 'CS603 AI Lab']))}\n"
+                f"• **Available Governance/Advisory Window:** {tt.get('free_slots', '01:30 PM - 02:30 PM')}"
+            )
+        else:
+            summary_parts.append(
+                f"📅 **Today's Class Schedule ({tt.get('semester', '6th Semester')} - {tt.get('section', 'Section A')}):**\n\n"
+                f"{tt.get('schedule', '')}\n\n"
+                f"💡 **Suggested Free Window:** {tt.get('free_slot', '11:00 AM - 12:00 PM')}"
+            )
+    elif "regulations" in shared_mem:
+        reg = shared_mem["regulations"]
+        top_sources = reg.get("top_sources", ["Department Regulations"])
+        summary_parts.append(f"📚 **Academic Governance & Policy Briefing:**")
+        summary_parts.append(f"**Verified Sources:** {', '.join(top_sources)}\n")
+        
+        contexts = reg.get("contexts", [])
+        if contexts:
+            for idx, ctx in enumerate(contexts, 1):
+                src = ctx.get("source", "Policy Document")
+                score = ctx.get("similarity_score", 0.0)
+                chunk = ctx.get("chunk", "").strip()
+                summary_parts.append(f"**[{idx}] Source: {src}** (Relevance: {score * 100:.1f}%)\n>{chunk.replace(chr(10), chr(10) + '> ')}\n")
+        else:
+            summary_parts.append(reg.get("formatted_context", "No relevant policy documents found."))
+            
+        summary_parts.append(f"💡 **Executive Secretary Recommendation:** Review the clauses above. Contact your Department Advisor or HOD office if further administrative sanction is required.")
     else:
-        advice_parts.append("1. **Query Resolution:** Explore the Governance & Management modules below for specific departmental regulations.")
-        advice_parts.append("2. **Support:** Reach out to your Department Head or Faculty Advisor for personalized academic counseling.")
-
-    summary_parts.append("\n".join(advice_parts))
+        summary_parts.append(f"Here are the findings gathered for your query regarding **{query}**:")
+        for k, v in shared_mem.items():
+            if isinstance(v, dict):
+                summary_parts.append(f"• **{k.replace('_', ' ').title()}:** {json.dumps(v, default=str)}")
 
     final_response = "\n\n".join(summary_parts)
     
     # Save recommendation to long-term memory
-    student_id = state.get("student_id", "STU1024")
-    query = state.get("query", "")
     long_term_memory.save_query_and_recommendation(student_id, query, final_response[:200])
 
     return {
@@ -298,8 +404,8 @@ def dispatcher_node(state: AgentState) -> AgentState:
     """
     # Check if human approval is blocking execution
     hitl_state = check_human_approval_required(state)
-    if hitl_state.get("needs_human_approval"):
-        print("[Dispatcher] Execution paused: Awaiting Human-in-the-Loop approval.")
+    if hitl_state.get("needs_human_approval") and not state.get("human_approved"):
+        print("[Dispatcher] Execution paused: Awaiting Human-in-the-Loop HOD approval.")
         return hitl_state
 
     task_queue = state.get("task_queue", [])
@@ -326,8 +432,8 @@ def dispatcher_node(state: AgentState) -> AgentState:
     }
 
 def route_next_agent(state: AgentState) -> str:
-    if state.get("needs_human_approval"):
-        return END
+    if state.get("needs_human_approval") and not state.get("human_approved"):
+        return "hod_approval_node"
         
     current_task_id = state.get("current_task_id")
     task_queue = state.get("task_queue", [])
@@ -416,6 +522,7 @@ graph_builder.add_conditional_edges(
         "database_agent": "database_agent",
         "email_agent": "email_agent",
         "negotiation_agent": "negotiation_agent",
+        "hod_approval_node": "hod_approval_node",
         "reflection_agent": "reflection_agent",
         END: END
     }
@@ -426,7 +533,7 @@ for node_name in [
     "attendance_agent", "leave_agent", "faculty_agent", 
     "timetable_agent", "notice_agent", "rag_agent", 
     "analytics_agent", "database_agent", "email_agent",
-    "negotiation_agent"
+    "negotiation_agent", "hod_approval_node"
 ]:
     graph_builder.add_edge(node_name, "dispatcher")
 

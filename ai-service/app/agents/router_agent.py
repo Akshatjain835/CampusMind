@@ -42,7 +42,10 @@ def route_query_with_llm(query: str) -> Dict[str, Any]:
         if "leave" in query_lower:
             primary = "leave_agent"
             cat = "leave_management"
-        elif any(k in query_lower for k in ["faculty", "meeting", "schedule"]):
+        elif any(k in query_lower for k in ["class", "classes", "schedule", "timetable", "routine"]):
+            primary = "timetable_agent"
+            cat = "scheduling"
+        elif any(k in query_lower for k in ["faculty", "meeting"]):
             primary = "faculty_agent"
             cat = "scheduling"
         else:

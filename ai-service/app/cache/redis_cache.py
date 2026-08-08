@@ -68,6 +68,9 @@ def set_cached_response(
     ttl_seconds: int = 3600
 ):
     """Stores query response in Redis or In-Memory fallback buffer with TTL."""
+    if not response_data or not response_data.get("final_response"):
+        return
+
     cache_key = _hash_query(query, user_role, department)
     
     if REDIS_AVAILABLE:

@@ -1,14 +1,21 @@
 from typing import Dict, Any, List, Optional
 from langchain_core.tools import tool
 
+from datetime import datetime, timedelta
+
 @tool
-def find_free_slot(faculty_ids: List[str], date: str = "Tomorrow") -> Dict[str, Any]:
+def find_free_slot(faculty_ids: List[str], date: Optional[str] = None) -> Dict[str, Any]:
     """
     Checks timetable schedules across multiple faculty members and returns common free slots.
     """
+    target_date = date
+    if not target_date or target_date.lower() in ["tomorrow", "default"]:
+        tomorrow = datetime.now() + timedelta(days=1)
+        target_date = tomorrow.strftime("%Y-%m-%d")
+        
     return {
         "faculty_checked": faculty_ids,
-        "date": date,
+        "date": target_date,
         "common_free_slots": [
             "11:00 AM - 12:00 PM",
             "03:00 PM - 04:00 PM"

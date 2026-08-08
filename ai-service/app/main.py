@@ -1,5 +1,10 @@
 import sys
 import io
+import os
+import uuid
+from dotenv import load_dotenv
+
+load_dotenv()
 
 if hasattr(sys.stdout, 'buffer'):
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
@@ -49,6 +54,7 @@ async def global_exception_handler(request: Request, exc: Exception):
 class QueryRequest(BaseModel):
     user_name: Optional[str] = "Rahul Sharma"
     user_role: Optional[str] = "student"
+    student_id: Optional[str] = None
     department: Optional[str] = "Computer Science & Engineering"
     semester: Optional[str] = "6th Semester"
     section: Optional[str] = "Section A"
@@ -128,10 +134,11 @@ async def stream_agent_workflow(request: QueryRequest):
     """Streams multi-agent graph execution step-by-step using Server-Sent Events (SSE)."""
     async def event_generator():
         try:
+            active_student_id = request.student_id or request.thread_id or "STU1024"
             initial_state: AgentState = {
                 "user_name": request.user_name,
                 "user_role": request.user_role,
-                "student_id": "STU1024",
+                "student_id": active_student_id,
                 "department": request.department or "Computer Science & Engineering",
                 "semester": request.semester or "6th Semester",
                 "section": request.section or "Section A",
@@ -155,6 +162,7 @@ async def stream_agent_workflow(request: QueryRequest):
                 "errors": []
             }
             
+            import uuid
             dept_key = (request.department or "CSE").replace(" ", "_")
             session_thread_id = request.thread_id or f"{dept_key}_{request.user_role}_{request.user_name.replace(' ', '_')}"
 
@@ -162,7 +170,35 @@ async def stream_agent_workflow(request: QueryRequest):
                 initial_state,
                 config={"configurable": {"thread_id": session_thread_id}}
             ):
+                if not isinstance(event, dict):
+                    continue
                 for node_name, node_state in event.items():
+                    if node_name == "__interrupt__":
+                        # If graph interrupted for HITL approval, fetch current state snapshot
+                        state_snap = dynamic_campus_graph.get_state({"configurable": {"thread_id": session_thread_id}}).values
+                        if isinstance(state_snap, dict):
+                            # Dynamically generate briefing from state gathered so far
+                            from app.graph.dynamic_graph import response_generator_node
+                            gen_state = response_generator_node(state_snap)
+                            final_resp = gen_state.get("final_response")
+                            chain = gen_state.get("agent_chain", [])
+                            data_payload = {
+                                "node": "hod_approval_node",
+                                "agent": "HOD Approval Governance Intercept",
+                                "chain": chain,
+                                "shared_memory_keys": list(gen_state.get("shared_memory", {}).keys()),
+                                "final_response": final_resp,
+                                "needs_human_approval": gen_state.get("needs_human_approval", True),
+                                "human_approval_context": gen_state.get("human_approval_context")
+                            }
+                            yield f"data: {json.dumps(data_payload)}\n\n"
+                        continue
+
+                    if isinstance(node_state, tuple):
+                        node_state = node_state[0] if len(node_state) > 0 and isinstance(node_state[0], dict) else {}
+                    if not isinstance(node_state, dict):
+                        node_state = {}
+
                     chain = node_state.get("agent_chain", [])
                     active_agent = chain[-1] if chain else node_name
                     audit_agent_step(active_agent, node_state)
@@ -173,7 +209,8 @@ async def stream_agent_workflow(request: QueryRequest):
                         "chain": chain,
                         "shared_memory_keys": list(node_state.get("shared_memory", {}).keys()),
                         "final_response": node_state.get("final_response"),
-                        "needs_human_approval": node_state.get("needs_human_approval", False)
+                        "needs_human_approval": node_state.get("needs_human_approval", False),
+                        "human_approval_context": node_state.get("human_approval_context")
                     }
                     yield f"data: {json.dumps(data_payload)}\n\n"
                     await asyncio.sleep(0.05)
@@ -200,10 +237,11 @@ def execute_agent_workflow(request: QueryRequest):
                 "cached": True
             }
 
+        active_student_id = request.student_id or request.thread_id or "STU1024"
         initial_state: AgentState = {
             "user_name": request.user_name,
             "user_role": request.user_role,
-            "student_id": "STU1024",
+            "student_id": active_student_id,
             "department": request.department or "Computer Science & Engineering",
             "semester": request.semester or "6th Semester",
             "section": request.section or "Section A",
@@ -228,12 +266,17 @@ def execute_agent_workflow(request: QueryRequest):
         }
         
         dept_key = (request.department or "CSE").replace(" ", "_")
-        session_thread_id = request.thread_id or f"{dept_key}_{request.user_role}_{request.user_name.replace(' ', '_')}"
+        session_thread_id = f"{request.thread_id or dept_key}_{uuid.uuid4().hex[:8]}"
         final_state = dynamic_campus_graph.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_thread_id}}
         )
         
+        if isinstance(final_state, tuple):
+            final_state = final_state[0] if len(final_state) > 0 and isinstance(final_state[0], dict) else {}
+        if not isinstance(final_state, dict):
+            final_state = {}
+
         chain = final_state.get("agent_chain", [])
         intent_label = f"Multi-Agent System ({' ➔ '.join(chain)})" if chain else "Autonomous Agent"
         
@@ -258,17 +301,16 @@ def execute_agent_workflow(request: QueryRequest):
         return result_payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ai/dynamic-query")
 def execute_dynamic_multi_agent_workflow(request: QueryRequest):
     """Executes the dynamic production-grade Multi-Agent workflow with Planning, Reasoning & Reflection."""
     try:
+        active_student_id = request.student_id or request.thread_id or "STU1024"
         initial_state: AgentState = {
             "user_name": request.user_name,
             "user_role": request.user_role,
-            "student_id": "STU1024",
+            "student_id": active_student_id,
             "department": request.department or "Computer Science & Engineering",
             "semester": request.semester or "6th Semester",
             "section": request.section or "Section A",
@@ -292,7 +334,7 @@ def execute_dynamic_multi_agent_workflow(request: QueryRequest):
             "errors": []
         }
         
-        session_thread_id = f"dynamic_{request.user_role}_{request.thread_id or 'default'}"
+        session_thread_id = f"dynamic_{request.user_role}_{uuid.uuid4().hex[:8]}"
         final_state = dynamic_campus_graph.invoke(
             initial_state,
             config={"configurable": {"thread_id": session_thread_id}}

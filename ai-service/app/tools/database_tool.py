@@ -13,12 +13,17 @@ def execute_sql_query(query: str) -> Dict[str, Any]:
             "message": "Modification queries (DROP, DELETE, TRUNCATE) are forbidden for safety."
         }
         
+    target_id = "STU1024"
+    if "student_id = '" in query:
+        target_id = query.split("student_id = '")[1].split("'")[0]
+    elif "student_id='" in query:
+        target_id = query.split("student_id='")[1].split("'")[0]
+
     return {
         "query": query,
         "execution_status": "Success",
-        "rows_returned": 2,
+        "rows_returned": 1,
         "results": [
-            {"student_id": "STU1024", "name": "Rahul Sharma", "gpa": 8.4, "status": "Active"},
-            {"student_id": "STU1025", "name": "Priya Singh", "gpa": 9.1, "status": "Active"}
+            {"student_id": target_id, "name": "Active Student User", "gpa": 8.4, "status": "Active", "department": "Computer Science & Engineering"}
         ]
     }

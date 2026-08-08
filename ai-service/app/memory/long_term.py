@@ -13,6 +13,7 @@ class LongTermStudentMemory:
         self.client = None
         self.db = None
         self.collection = None
+        self._in_mem_store = {}
         self._init_mongo()
 
     def _init_mongo(self):
@@ -56,29 +57,103 @@ class LongTermStudentMemory:
         except Exception as e:
             print(f"[LongTermMemory Seed Warning]: {e}")
 
-    def get_student_profile(self, student_id: str = "STU1024") -> Dict[str, Any]:
+    def get_student_profile(
+        self, 
+        student_id: str = "STU1024", 
+        user_name: Optional[str] = None, 
+        department: Optional[str] = None, 
+        semester: Optional[str] = None
+    ) -> Dict[str, Any]:
         """Retrieves student profile and long-term memory history from MongoDB Atlas."""
         try:
             if self.collection is not None:
                 profile = self.collection.find_one({"student_id": student_id}, {"_id": 0})
                 if profile:
                     return profile
+                    
+                # Create dynamic profile if student_id is new
+                default_name = "Rahul Sharma" if student_id == "STU1024" else "Student"
+                dynamic_name = user_name or default_name
+                dynamic_dept = department or "Computer Science & Engineering"
+                dynamic_sem = semester or "6th Semester"
+                
+                new_profile = {
+                    "student_id": student_id,
+                    "name": dynamic_name,
+                    "department": dynamic_dept,
+                    "semester": dynamic_sem,
+                    "section": "Section A",
+                    "historical_attendance": [
+                        {"semester": "4th Semester", "percentage": 82.0},
+                        {"semester": "5th Semester", "percentage": 78.5},
+                        {"semester": f"{dynamic_sem} (Current)", "percentage": 72.0}
+                    ],
+                    "past_queries": [],
+                    "past_recommendations": [],
+                    "active_leave_applications": []
+                }
+                try:
+                    self.collection.insert_one(new_profile)
+                    new_profile.pop("_id", None)
+                except Exception as insert_err:
+                    print(f"[LongTermMemory Auto-Insert Warning]: {insert_err}")
+                if student_id not in self._in_mem_store:
+                    self._in_mem_store[student_id] = new_profile
+                return self._in_mem_store.get(student_id, new_profile)
             
-            # Fallback if student_id not found in DB
-            return {
+            if student_id in self._in_mem_store:
+                return self._in_mem_store[student_id]
+                
+            default_name = "Rahul Sharma" if student_id == "STU1024" else "Student"
+            prof = {
                 "student_id": student_id,
-                "name": "Rahul Sharma",
-                "department": "Computer Science & Engineering",
-                "semester": "6th Semester",
+                "name": user_name or default_name,
+                "department": department or "Computer Science & Engineering",
+                "semester": semester or "6th Semester",
+                "historical_attendance": [
+                    {"semester": "4th Semester", "percentage": 82.0},
+                    {"semester": "5th Semester", "percentage": 78.5},
+                    {"semester": "6th Semester (Current)", "percentage": 72.0}
+                ],
                 "past_queries": [],
                 "past_recommendations": []
             }
+            self._in_mem_store[student_id] = prof
+            return prof
         except Exception as e:
             print(f"[LongTermMemory Get Error]: {e}")
-            return {"student_id": student_id, "name": "Rahul Sharma", "semester": "6th Semester"}
+            if student_id in self._in_mem_store:
+                return self._in_mem_store[student_id]
+            default_name = "Rahul Sharma" if student_id == "STU1024" else "Student"
+            prof = {
+                "student_id": student_id, 
+                "name": user_name or default_name, 
+                "department": department or "Computer Science & Engineering",
+                "semester": semester or "6th Semester",
+                "historical_attendance": [
+                    {"semester": "4th Semester", "percentage": 82.0},
+                    {"semester": "5th Semester", "percentage": 78.5},
+                    {"semester": "6th Semester (Current)", "percentage": 72.0}
+                ],
+                "past_queries": [],
+                "past_recommendations": []
+            }
+            self._in_mem_store[student_id] = prof
+            return prof
 
     def save_query_and_recommendation(self, student_id: str, query: str, recommendation: str):
         """Updates long-term student memory in MongoDB Atlas with new query and recommendation."""
+        # Update in-memory fallback store
+        if student_id not in self._in_mem_store:
+            self.get_student_profile(student_id)
+        prof = self._in_mem_store.get(student_id, {})
+        if "past_queries" not in prof:
+            prof["past_queries"] = []
+        if "past_recommendations" not in prof:
+            prof["past_recommendations"] = []
+        prof["past_queries"].append(query)
+        prof["past_recommendations"].append(recommendation)
+
         try:
             if self.collection is not None:
                 self.collection.update_one(

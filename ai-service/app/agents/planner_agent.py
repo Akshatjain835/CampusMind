@@ -81,20 +81,73 @@ def create_fallback_plan(query: str) -> ExecutionPlan:
             requires_parallel_execution=False,
             tasks=tasks
         )
-    elif "eligible" in query_lower or ("attendance" in query_lower and "leave" in query_lower):
+    elif "eligible" in query_lower or "leave" in query_lower or "attendance" in query_lower:
         tasks = [
-            SubTask(id="task_1", agent="attendance_agent", description="Fetch current attendance stats", dependencies=[]),
-            SubTask(id="task_2", agent="rag_agent", description="Query attendance regulations", dependencies=[]),
-            SubTask(id="task_3", agent="leave_agent", description="Evaluate leave impact", dependencies=["task_1"]),
-            SubTask(id="task_4", agent="analytics_agent", description="Calculate final projected attendance risk", dependencies=["task_1", "task_2", "task_3"])
+            SubTask(id="task_1", agent="attendance_agent", description="Fetch current attendance percentage and course breakdown", dependencies=[]),
+            SubTask(id="task_2", agent="rag_agent", description="Retrieve university regulations on attendance condonation and medical leave rules", dependencies=[]),
+            SubTask(id="task_3", agent="leave_agent", description="Evaluate leave request policy compliance and impact", dependencies=["task_1"]),
+            SubTask(id="task_4", agent="analytics_agent", description="Calculate final projected attendance and forecast exam eligibility risk", dependencies=["task_1", "task_2", "task_3"])
         ]
         return ExecutionPlan(
-            goal="Analyze exam eligibility and leave impact",
-            reasoning="Fallback multi-step plan combining attendance, regulation, leave, and predictive analytics",
+            goal="Analyze leave application impact, attendance compliance, and exam eligibility",
+            reasoning="Multi-agent workflow combining attendance verification, regulatory RAG search, leave impact analysis, and predictive risk modeling.",
             requires_parallel_execution=True,
             tasks=tasks
         )
-    elif "meeting" in query_lower or "schedule" in query_lower and "notify" in query_lower:
+    elif any(k in query_lower for k in ["exam", "examination", "mid-sem", "end-sem", "grade", "gpa", "co-po", "re-evaluation", "makeup", "remedial"]):
+        tasks = [
+            SubTask(id="task_1", agent="rag_agent", description="Retrieve examination structure, CO-PO attainment, and makeup/re-evaluation policies", dependencies=[]),
+            SubTask(id="task_2", agent="analytics_agent", description="Evaluate academic performance & exam eligibility implications", dependencies=["task_1"])
+        ]
+        return ExecutionPlan(
+            goal="Analyze examination guidelines, evaluation criteria, and academic support options",
+            reasoning="Multi-agent examination governance and academic standing evaluation.",
+            requires_parallel_execution=True,
+            tasks=tasks
+        )
+    elif any(k in query_lower for k in ["workload", "faculty", "scopus", "sci", "publication", "research", "naac", "nba", "fdp"]):
+        tasks = [
+            SubTask(id="task_1", agent="rag_agent", description="Query faculty research mandates, workload standards, and accreditation criteria", dependencies=[]),
+            SubTask(id="task_2", agent="faculty_agent", description="Check faculty governance & workload allocations", dependencies=["task_1"])
+        ]
+        return ExecutionPlan(
+            goal="Provide faculty research guidelines, teaching workload norms, and NBA/NAAC compliance standards",
+            reasoning="Faculty research and academic governance evaluation",
+            requires_parallel_execution=True,
+            tasks=tasks
+        )
+    elif any(k in query_lower for k in ["gpu", "compute", "hpc", "a100", "rtx", "lab", "batch", "practical"]):
+        tasks = [
+            SubTask(id="task_1", agent="rag_agent", description="Retrieve high-performance compute GPU allocation policies and lab batch rules", dependencies=[])
+        ]
+        return ExecutionPlan(
+            goal="Explain AI/ML GPU server compute allocation and lab batch guidelines",
+            reasoning="Lab infrastructure and compute resource allocation inquiry",
+            requires_parallel_execution=False,
+            tasks=tasks
+        )
+    elif any(k in query_lower for k in ["duty leave", "hackathon", "sports", "placement", "grant", "scholarship", "ragging", "grievance"]):
+        tasks = [
+            SubTask(id="task_1", agent="rag_agent", description="Retrieve Duty Leave limits, student grants, and code of conduct policies", dependencies=[]),
+            SubTask(id="task_2", agent="leave_agent", description="Assess duty leave limits and attendance credit rules", dependencies=["task_1"])
+        ]
+        return ExecutionPlan(
+            goal="Evaluate Duty Leave guidelines, participation attendance credits, and student support grants",
+            reasoning="Duty leave and student code of conduct evaluation",
+            requires_parallel_execution=True,
+            tasks=tasks
+        )
+    elif any(k in query_lower for k in ["timetable", "time table", "schedule", "class", "classes", "routine", "today", "todays", "pending"]):
+        tasks = [
+            SubTask(id="task_1", agent="timetable_agent", description="Fetch schedule and pending lectures for review", dependencies=[])
+        ]
+        return ExecutionPlan(
+            goal="Summarize today's timetable and pending classes",
+            reasoning="Direct timetable and pending schedule query",
+            requires_parallel_execution=False,
+            tasks=tasks
+        )
+    elif "meeting" in query_lower and "notify" in query_lower:
         tasks = [
             SubTask(id="task_1", agent="faculty_agent", description="Identify target faculty participants", dependencies=[]),
             SubTask(id="task_2", agent="timetable_agent", description="Find conflict-free free slots across calendars", dependencies=["task_1"]),
@@ -103,27 +156,6 @@ def create_fallback_plan(query: str) -> ExecutionPlan:
         return ExecutionPlan(
             goal="Schedule faculty meeting and notify participants",
             reasoning="Sequential workflow for participant identification, slot finding, and notification",
-            requires_parallel_execution=False,
-            tasks=tasks
-        )
-    elif "timetable" in query_lower or "class" in query_lower:
-        tasks = [
-            SubTask(id="task_1", agent="timetable_agent", description="Fetch schedule for section and semester", dependencies=[])
-        ]
-        return ExecutionPlan(
-            goal="Retrieve timetable schedule",
-            reasoning="Direct timetable query",
-            requires_parallel_execution=False,
-            tasks=tasks
-        )
-    elif "leave" in query_lower:
-        tasks = [
-            SubTask(id="task_1", agent="attendance_agent", description="Fetch current attendance", dependencies=[]),
-            SubTask(id="task_2", agent="leave_agent", description="Evaluate leave policy compliance", dependencies=["task_1"])
-        ]
-        return ExecutionPlan(
-            goal="Evaluate leave request",
-            reasoning="Attendance verification followed by leave policy check",
             requires_parallel_execution=False,
             tasks=tasks
         )
@@ -152,26 +184,36 @@ def planner_node(state: AgentState) -> AgentState:
     agent_chain = state.get("agent_chain", [])
     agent_chain.append("Planner Agent")
     
+    # Context awareness: pull past queries from long-term memory in state
+    shared_mem = state.get("shared_memory", {})
+    past_queries = shared_mem.get("student_profile", {}).get("past_queries", [])
+    history_ctx = f"\nRecent History Context: {', '.join(past_queries[-3:])}" if past_queries else ""
+
     llm = get_llm(temperature=0.1)
-    plan_obj: ExecutionPlan
+    plan_obj: ExecutionPlan = None
     
     if llm:
         try:
             prompt = ChatPromptTemplate.from_messages([
                 ("system", SYSTEM_PLANNER_PROMPT),
-                ("user", "User Name: {user_name}\nRole: {user_role}\nDepartment: {department}\nSemester: {semester}\nQuery: {query}\n\nProduce Execution Plan JSON:")
+                ("user", "User Name: {user_name}\nRole: {user_role}\nDepartment: {department}\nSemester: {semester}{history_ctx}\nQuery: {query}\n\nProduce Execution Plan JSON:")
             ])
-            formatted_prompt = prompt.format(
-                user_name=user_name,
-                user_role=user_role,
-                department=department,
-                semester=semester,
-                query=query
-            )
-            
-            # Try structured output or JSON parsing
-            structured_llm = llm.with_structured_output(ExecutionPlan)
-            plan_obj = structured_llm.invoke(formatted_prompt)
+            chain = prompt | llm
+            res = chain.invoke({
+                "user_name": user_name,
+                "user_role": user_role,
+                "department": department,
+                "semester": semester,
+                "history_ctx": history_ctx,
+                "query": query
+            })
+            content = res.content if hasattr(res, "content") else str(res)
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            data = json.loads(content)
+            plan_obj = ExecutionPlan(**data)
         except Exception as err:
             print(f"[Planner Agent LLM Warning]: {err}. Falling back to deterministic plan.")
             plan_obj = create_fallback_plan(query)
