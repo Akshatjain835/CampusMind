@@ -203,7 +203,8 @@ def response_generator_node(state: DepartmentState) -> DepartmentState:
                 f"User: {user_name} (Role: {user_role})\n"
                 f"User Question: '{query}'\n"
                 f"Retrieved Facts / Context:\n{context}\n\n"
-                f"Draft a helpful, polite, professional response answering the user directly based on the context. Do not repeat debug traces."
+                f"Draft a helpful, polite, professional response answering the user directly based on the context.\n"
+                f"STRICT FORMATTING RULE: Never output raw JSON or Python dictionary strings like {{\"key\": \"val\"}}. Convert all profile data, regulations, and facts into clean, human-readable Markdown with bullet points or formatted paragraphs."
             )
             response = llm.invoke(prompt)
             return {

@@ -381,10 +381,25 @@ def response_generator_node(state: AgentState) -> AgentState:
             
         summary_parts.append(f"💡 **Executive Secretary Recommendation:** Review the clauses above. Contact your Department Advisor or HOD office if further administrative sanction is required.")
     else:
-        summary_parts.append(f"Here are the findings gathered for your query regarding **{query}**:")
+        summary_parts.append(f"Here are the findings gathered for your query regarding **{query}**:\n")
         for k, v in shared_mem.items():
+            clean_cat = k.replace('_', ' ').title()
             if isinstance(v, dict):
-                summary_parts.append(f"• **{k.replace('_', ' ').title()}:** {json.dumps(v, default=str)}")
+                summary_parts.append(f"### 📌 {clean_cat}")
+                for sub_k, sub_v in v.items():
+                    clean_sub = sub_k.replace('_', ' ').title()
+                    if isinstance(sub_v, dict):
+                        summary_parts.append(f"• **{clean_sub}:**")
+                        for deep_k, deep_v in sub_v.items():
+                            summary_parts.append(f"  - **{deep_k.replace('_', ' ').title()}:** {deep_v}")
+                    elif isinstance(sub_v, list):
+                        summary_parts.append(f"• **{clean_sub}:** {', '.join(str(item) for item in sub_v)}")
+                    else:
+                        summary_parts.append(f"• **{clean_sub}:** {sub_v}")
+            elif isinstance(v, list):
+                summary_parts.append(f"• **{clean_cat}:** {', '.join(str(item) for item in v)}")
+            else:
+                summary_parts.append(f"• **{clean_cat}:** {v}")
 
     final_response = "\n\n".join(summary_parts)
     
