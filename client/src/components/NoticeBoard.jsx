@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { NoticeGeneratorModal } from './NoticeGeneratorModal';
+import { LoadingState, EmptyState } from './StateFeedback';
 import { 
   FileText, Sparkles, Plus, Calendar, Tag, 
-  Trash2, User, ChevronDown, ChevronUp, Bell 
+  Trash2, User, ChevronDown, ChevronUp, Bell, CheckCircle2 
 } from 'lucide-react';
 
 export const NoticeBoard = () => {
@@ -111,13 +112,13 @@ export const NoticeBoard = () => {
 
       {/* Notice Cards Grid */}
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Loading department notices...
-        </div>
+        <LoadingState message="Loading department circulars & notices..." />
       ) : filteredNotices.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          No active notices or circulars available.
-        </div>
+        <EmptyState
+          title="No official notices published"
+          description="✓ All clear! Official department circulars, workshop schedules, and exam notices will appear here."
+          icon={CheckCircle2}
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {filteredNotices.map((notice) => {

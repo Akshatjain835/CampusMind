@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import axios from 'axios';
 import { connectDB } from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
@@ -67,11 +68,29 @@ process.on('uncaughtException', (err) => {
   console.error('[Uncaught Exception]:', err);
 });
 
+// Render Keep-Alive Daemon: Pings FastAPI AI Microservice every 10 minutes to prevent sleep
+const AI_SERVICE_URL = process.env.AI_SERVICE_URL || 'http://127.0.0.1:8000';
+const PING_INTERVAL = 10 * 60 * 1000; // 10 minutes
+
+const startAiKeepAliveDaemon = () => {
+  setInterval(async () => {
+    try {
+      const pingUrl = `${AI_SERVICE_URL.replace(/\/$/, '')}/health`;
+      const res = await axios.get(pingUrl, { timeout: 10000 });
+      console.log(`[Render Keep-Alive Daemon] Pinged AI Service at ${pingUrl} — Status: ${res.data?.status || 'OK'}`);
+    } catch (err) {
+      console.warn(`[Render Keep-Alive Daemon] Health ping note: ${err.message}`);
+    }
+  }, PING_INTERVAL);
+};
+
 let PORT = parseInt(process.env.PORT, 10) || 5000;
 
 const startServer = (portToUse) => {
   const server = app.listen(portToUse, '0.0.0.0', () => {
     console.log(`[DepartmentAI Express Gateway] Running on port ${portToUse}`);
+    console.log(`[Render Keep-Alive Daemon] Active target: ${AI_SERVICE_URL}`);
+    startAiKeepAliveDaemon();
   });
 
   server.on('error', (err) => {
@@ -85,3 +104,4 @@ const startServer = (portToUse) => {
 };
 
 startServer(PORT);
+

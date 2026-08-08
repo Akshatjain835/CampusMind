@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { LeaveModal } from './LeaveModal';
+import { LoadingState, EmptyState } from './StateFeedback';
 import {
   FileText, Plus, CheckCircle2, XCircle, Clock,
   Sparkles, User, AlertCircle, ShieldCheck
@@ -158,13 +159,15 @@ export const LeaveManagement = () => {
 
       {/* Leave List */}
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Loading leave applications...
-        </div>
+        <LoadingState message="Loading leave application history..." />
       ) : leaves.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-dim)' }}>
-          No leave applications found in this view.
-        </div>
+        <EmptyState
+          title="No leave applications submitted"
+          description="✓ No active or past leave requests found in this view. Use 'Apply New Leave' to request medical or casual leave."
+          icon={CheckCircle2}
+          actionLabel="Apply New Leave"
+          onAction={() => setModalOpen(true)}
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {leaves.map((leave) => (

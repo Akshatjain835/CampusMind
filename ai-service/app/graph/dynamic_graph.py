@@ -1,4 +1,5 @@
 import json
+import re
 from typing import Dict, Any, List, Optional
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
@@ -140,9 +141,33 @@ def faculty_agent_node(state: AgentState) -> AgentState:
     }
     return stub_agent_node("Faculty Agent", state, data)
 
+def extract_target_section_and_semester(query: str, default_section: str = "Section A", default_semester: str = "6th Semester") -> tuple:
+    query_upper = (query or "").upper()
+    
+    target_section = default_section
+    sec_match = re.search(r'\b(?:SECTION|SEC|SEC-)\s*([A-F0-9]+)\b', query_upper)
+    if not sec_match:
+        sec_match = re.search(r'\bFOR\s+SECTION\s*([A-F0-9]+)\b', query_upper)
+    if sec_match:
+        sec_str = sec_match.group(1).strip()
+        target_section = f"Section {sec_str}"
+
+    target_semester = default_semester
+    sem_match = re.search(r'\b(\d+)(?:ST|ND|RD|TH)?\s*(?:SEM|SEMESTER)\b', query_upper)
+    if not sem_match:
+        sem_match = re.search(r'\b(?:SEM|SEMESTER)\s*(\d+)\b', query_upper)
+    if sem_match:
+        sem_num = sem_match.group(1).strip()
+        target_semester = f"{sem_num}th Semester"
+
+    return target_section, target_semester
+
 def timetable_agent_node(state: AgentState) -> AgentState:
-    semester = state.get("semester", "6th Semester")
-    section = state.get("section", "Section A")
+    query = state.get("query", "")
+    default_sec = state.get("section", "Section A")
+    default_sem = state.get("semester", "6th Semester")
+    
+    target_section, target_semester = extract_target_section_and_semester(query, default_sec, default_sem)
     user_role = str(state.get("user_role", "student")).lower()
     user_name = state.get("user_name", "Faculty Member")
     
@@ -163,16 +188,44 @@ def timetable_agent_node(state: AgentState) -> AgentState:
             }
         }
     else:
-        slot_res = find_free_slot.invoke({"faculty_ids": [f"{section} Timetable"], "date": "Today"})
-        schedule = (
-            "• 10:00 AM - 11:00 AM: CS601 Compiler Design\n"
-            "• 11:00 AM - 12:00 PM: CS602 Computer Networks\n"
-            "• 02:00 PM - 04:00 PM: CS603 AI Lab"
-        )
+        sec_letter = target_section.strip().split()[-1].upper() if target_section else "A"
+        
+        if sec_letter == "B":
+            schedule = (
+                "• 10:00 AM - 11:00 AM: CS604 Software Engineering (Prof. Anita Roy - Room 305)\n"
+                "• 11:00 AM - 12:00 PM: CS605 Cloud Computing (Dr. S. Mehta - Room 305)\n"
+                "• 02:00 PM - 04:00 PM: CS606 Web Technologies Lab (Dr. R. K. Sharma - Net Lab 104)"
+            )
+        elif sec_letter == "C":
+            schedule = (
+                "• 10:00 AM - 11:00 AM: CS603 Artificial Intelligence (Dr. V. Patel - Room 301)\n"
+                "• 11:00 AM - 12:00 PM: CS601 Compiler Design (Dr. R. K. Sharma - Room 301)\n"
+                "• 02:00 PM - 04:00 PM: CS604 Software Engineering Lab (Prof. Anita Roy - Net Lab 102)"
+            )
+        elif sec_letter == "D":
+            schedule = (
+                "• 10:00 AM - 11:00 AM: CS604 Software Engineering (Prof. Anita Roy - Room 402)\n"
+                "• 11:00 AM - 12:00 PM: CS602 Computer Networks (Dr. R. K. Sharma - Room 402)\n"
+                "• 02:00 PM - 04:00 PM: CS605 Web & Cloud Computing Practical (Dr. V. Patel - Advanced Computing Lab 3)"
+            )
+        elif sec_letter in ["E", "F"]:
+            schedule = (
+                "• 10:00 AM - 11:00 AM: EC601 Analog & Digital Signals (Dr. A. Verma - Room E-101)\n"
+                "• 11:00 AM - 12:00 PM: EC602 VLSI System Design (Prof. S. Gupta - Room E-101)\n"
+                "• 02:00 PM - 04:00 PM: EC605 Microwave & Antenna Practical (Dr. M. Rao - Communication Lab 202)"
+            )
+        else:
+            schedule = (
+                "• 10:00 AM - 11:00 AM: CS601 Compiler Design (Dr. R. K. Sharma - Lab 101)\n"
+                "• 11:00 AM - 12:00 PM: CS602 Computer Networks (Prof. Anita Roy - Seminar Hall)\n"
+                "• 02:00 PM - 04:00 PM: CS603 AI & Data Structures Practical (Dr. V. Patel - Net Lab 102)"
+            )
+
+        slot_res = find_free_slot.invoke({"faculty_ids": [f"{target_section} Timetable"], "date": "Today"})
         data = {
             "timetable": {
-                "semester": semester,
-                "section": section,
+                "semester": target_semester,
+                "section": target_section,
                 "schedule": schedule,
                 "free_slot": slot_res.get("suggested_best_slot", "11:00 AM - 12:00 PM")
             }

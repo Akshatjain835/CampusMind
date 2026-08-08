@@ -19,7 +19,7 @@ import { RegulationsPage } from './pages/RegulationsPage';
 import { AgentTracesPage } from './pages/AgentTracesPage';
 import { SystemHealthPage } from './pages/SystemHealthPage';
 import { ProfilePage } from './pages/ProfilePage';
-
+import { FacultyWorkloadPage } from './pages/FacultyWorkloadPage';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 // React Glassmorphic Global Error Boundary
@@ -101,6 +101,17 @@ class ErrorBoundary extends Component {
   }
 }
 
+// Role-based Route Protection Component
+const RoleRoute = ({ allowedRoles, children }) => {
+  const { user } = useAuth();
+  const userRole = (user?.role || 'student').toLowerCase();
+
+  if (!allowedRoles.includes(userRole)) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
 // Protected Layout Guard Component
 const ProtectedApp = () => {
   const { user, loading } = useAuth();
@@ -131,7 +142,7 @@ const ProtectedApp = () => {
           }
         `}</style>
         <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>
-          Loading DepartmentAI System...
+          Loading CampusMind AI System...
         </span>
       </div>
     );
@@ -152,12 +163,40 @@ const ProtectedApp = () => {
         <Route path="leaves" element={<LeaveManagementPage />} />
         <Route path="notices" element={<NoticesPage />} />
         <Route path="meetings" element={<MeetingsPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="approvals" element={<ApprovalsPage />} />
         <Route path="regulations" element={<RegulationsPage />} />
-        <Route path="agent-traces" element={<AgentTracesPage />} />
-        <Route path="system-health" element={<SystemHealthPage />} />
         <Route path="profile" element={<ProfilePage />} />
+
+        {/* Role-Guarded Feature Routes */}
+        <Route path="faculty-workload" element={
+          <RoleRoute allowedRoles={['faculty', 'hod', 'admin']}>
+            <FacultyWorkloadPage />
+          </RoleRoute>
+        } />
+
+        <Route path="approvals" element={
+          <RoleRoute allowedRoles={['faculty', 'hod', 'admin']}>
+            <ApprovalsPage />
+          </RoleRoute>
+        } />
+
+        <Route path="analytics" element={
+          <RoleRoute allowedRoles={['faculty', 'hod', 'admin']}>
+            <AnalyticsPage />
+          </RoleRoute>
+        } />
+
+        <Route path="agent-traces" element={
+          <RoleRoute allowedRoles={['hod', 'admin']}>
+            <AgentTracesPage />
+          </RoleRoute>
+        } />
+
+        <Route path="system-health" element={
+          <RoleRoute allowedRoles={['admin']}>
+            <SystemHealthPage />
+          </RoleRoute>
+        } />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>

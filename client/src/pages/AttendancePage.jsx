@@ -1,16 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, AlertTriangle, CheckCircle2, TrendingUp, Sparkles, BookOpen } from 'lucide-react';
 
 export const AttendancePage = () => {
-  const [courses] = useState([
+  const [courses, setCourses] = useState([
     { code: 'CS601', name: 'Compiler Design', attended: 38, total: 42, percentage: 90.5, risk: 'LOW RISK', maxAbsencesAllowed: 4 },
     { code: 'CS602', name: 'Computer Networks', attended: 27, total: 36, percentage: 75.0, risk: 'MEDIUM RISK', maxAbsencesAllowed: 0 },
     { code: 'CS603', name: 'AI & Machine Learning', attended: 35, total: 40, percentage: 87.5, risk: 'LOW RISK', maxAbsencesAllowed: 3 },
     { code: 'CS604', name: 'Database Management Systems', attended: 39, total: 42, percentage: 92.8, risk: 'LOW RISK', maxAbsencesAllowed: 5 },
     { code: 'CS605', name: 'Operating Systems Lab', attended: 24, total: 30, percentage: 80.0, risk: 'LOW RISK', maxAbsencesAllowed: 1 }
   ]);
+  const [overallPct, setOverallPct] = useState(85.1);
 
-  const overallPct = 85.1;
+  useEffect(() => {
+    const fetchAttendance = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/analytics/kpi', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data?.kpis?.overallAttendanceRate) {
+            setOverallPct(data.kpis.overallAttendanceRate);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch attendance KPIs:', err);
+      }
+    };
+    fetchAttendance();
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
@@ -31,13 +50,13 @@ export const AttendancePage = () => {
             marginBottom: '12px'
           }}>
             <div style={{
-              width: `${overallPct}%`,
+              width: `${Math.min(100, overallPct)}%`,
               height: '100%',
               background: 'linear-gradient(90deg, #38bdf8 0%, #34d399 100%)'
             }} />
           </div>
-          <div style={{ fontSize: '0.78rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <CheckCircle2 size={14} /> Mandatory 75% Threshold Met
+          <div style={{ fontSize: '0.78rem', color: overallPct >= 75 ? '#34d399' : '#f43f5e', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CheckCircle2 size={14} /> {overallPct >= 75 ? 'Mandatory 75% Threshold Met' : 'Below Mandatory 75% Threshold'}
           </div>
         </div>
 
@@ -50,7 +69,7 @@ export const AttendancePage = () => {
             </span>
           </div>
           <p style={{ fontSize: '0.9rem', color: '#e2e8f0', lineHeight: 1.5, margin: 0 }}>
-            <strong>Computer Networks (CS602)</strong> is currently at <strong>75.0%</strong>. Missing 1 additional lecture will trigger detention status under Clause 1.1.
+            Overall computed semester attendance is <strong>{overallPct}%</strong>. Maintain current attendance to ensure exam hall ticket eligibility under Clause 1.1.
           </p>
         </div>
       </div>
@@ -110,3 +129,4 @@ export const AttendancePage = () => {
     </div>
   );
 };
+

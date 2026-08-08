@@ -10,7 +10,8 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkLoggedIn = async () => {
       const token = localStorage.getItem('token');
-      if (token) {
+      const sessionActive = sessionStorage.getItem('isLoggedIn');
+      if (token && sessionActive) {
         try {
           const response = await fetch('/api/auth/me', {
             headers: {
@@ -22,11 +23,16 @@ export const AuthProvider = ({ children }) => {
             setUser({ ...userData, token });
           } else {
             localStorage.removeItem('token');
+            sessionStorage.removeItem('isLoggedIn');
           }
         } catch (err) {
           console.error('Failed to verify token:', err);
           localStorage.removeItem('token');
+          sessionStorage.removeItem('isLoggedIn');
         }
+      } else {
+        localStorage.removeItem('token');
+        sessionStorage.removeItem('isLoggedIn');
       }
       setLoading(false);
     };
@@ -46,6 +52,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Login failed');
       }
       localStorage.setItem('token', data.token);
+      sessionStorage.setItem('isLoggedIn', 'true');
       setUser(data);
       return data;
     } catch (err) {
@@ -67,6 +74,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Registration failed');
       }
       localStorage.setItem('token', data.token);
+      sessionStorage.setItem('isLoggedIn', 'true');
       setUser(data);
       return data;
     } catch (err) {
@@ -113,6 +121,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('isLoggedIn');
     setUser(null);
   };
 

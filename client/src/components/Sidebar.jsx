@@ -17,7 +17,8 @@ import {
   Activity,
   User,
   LogOut,
-  Sparkles
+  Sparkles,
+  Briefcase
 } from 'lucide-react';
 
 export const Sidebar = ({ isOpen, toggleSidebar }) => {
@@ -31,42 +32,172 @@ export const Sidebar = ({ isOpen, toggleSidebar }) => {
 
   const role = (user?.role || 'student').toLowerCase();
 
-  // Navigation Links Definition by Role
-  const navSections = [
-    {
-      title: 'CORE PLATFORM',
-      items: [
-        { name: 'Dashboard', path: '/', icon: LayoutDashboard, roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'AI Secretary', path: '/ai-secretary', icon: Bot, badge: 'Agentic', roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'System Health', path: '/system-health', icon: Activity, roles: ['student', 'faculty', 'hod', 'admin'] }
-      ]
-    },
-    {
-      title: 'ACADEMICS',
-      items: [
-        { name: 'Attendance', path: '/attendance', icon: Calendar, roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'Courses', path: '/courses', icon: BookOpen, roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'Timetable', path: '/timetable', icon: Clock, roles: ['student', 'faculty', 'hod', 'admin'] }
-      ]
-    },
-    {
-      title: 'GOVERNANCE',
-      items: [
-        { name: 'Leave Management', path: '/leaves', icon: FileText, roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'Approvals (HITL)', path: '/approvals', icon: ShieldCheck, badge: user?.role !== 'student' ? 'Required' : null, roles: ['faculty', 'hod', 'admin'] },
-        { name: 'Department Notices', path: '/notices', icon: Bell, roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'Meetings', path: '/meetings', icon: Users, roles: ['student', 'faculty', 'hod', 'admin'] },
-        { name: 'Regulations (RAG)', path: '/regulations', icon: Search, roles: ['student', 'faculty', 'hod', 'admin'] }
-      ]
-    },
-    {
-      title: 'INTELLIGENCE',
-      items: [
-        { name: 'Analytics', path: '/analytics', icon: BarChart3, roles: ['faculty', 'hod', 'admin'] },
-        { name: 'Agent Traces', path: '/agent-traces', icon: GitBranch, badge: 'LangGraph', roles: ['student', 'faculty', 'hod', 'admin'] }
-      ]
+  // Role-Based Explicit Navigation Structure
+  const getNavSections = (userRole) => {
+    if (userRole === 'student') {
+      return [
+        {
+          title: 'CORE',
+          items: [
+            { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+            { name: 'AI Secretary', path: '/ai-secretary', icon: Bot, badge: 'Agentic' }
+          ]
+        },
+        {
+          title: 'ACADEMICS',
+          items: [
+            { name: 'Attendance', path: '/attendance', icon: Calendar },
+            { name: 'Courses', path: '/courses', icon: BookOpen },
+            { name: 'Timetable', path: '/timetable', icon: Clock }
+          ]
+        },
+        {
+          title: 'STUDENT SERVICES',
+          items: [
+            { name: 'Leave Management', path: '/leaves', icon: FileText },
+            { name: 'Notices', path: '/notices', icon: Bell },
+            { name: 'Meetings', path: '/meetings', icon: Users },
+            { name: 'Regulations', path: '/regulations', icon: Search }
+          ]
+        },
+        {
+          title: 'ACCOUNT',
+          items: [
+            { name: 'Profile', path: '/profile', icon: User }
+          ]
+        }
+      ];
+    } else if (userRole === 'faculty') {
+      return [
+        {
+          title: 'CORE',
+          items: [
+            { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+            { name: 'AI Secretary', path: '/ai-secretary', icon: Bot, badge: 'Agentic' }
+          ]
+        },
+        {
+          title: 'ACADEMICS',
+          items: [
+            { name: 'Attendance', path: '/attendance', icon: Calendar },
+            { name: 'Courses', path: '/courses', icon: BookOpen },
+            { name: 'Timetable', path: '/timetable', icon: Clock }
+          ]
+        },
+        {
+          title: 'GOVERNANCE',
+          items: [
+            { name: 'Faculty Workload', path: '/faculty-workload', icon: Briefcase },
+            { name: 'Leave Management', path: '/leaves', icon: FileText },
+            { name: 'Approvals', path: '/approvals', icon: ShieldCheck, badge: 'Required' },
+            { name: 'Notices', path: '/notices', icon: Bell },
+            { name: 'Meetings', path: '/meetings', icon: Users },
+            { name: 'Regulations', path: '/regulations', icon: Search }
+          ]
+        },
+        {
+          title: 'INTELLIGENCE',
+          items: [
+            { name: 'Analytics', path: '/analytics', icon: BarChart3 }
+          ]
+        },
+        {
+          title: 'ACCOUNT',
+          items: [
+            { name: 'Profile', path: '/profile', icon: User }
+          ]
+        }
+      ];
+    } else if (userRole === 'hod') {
+      return [
+        {
+          title: 'CORE',
+          items: [
+            { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+            { name: 'AI Secretary', path: '/ai-secretary', icon: Bot, badge: 'Agentic' }
+          ]
+        },
+        {
+          title: 'ACADEMICS',
+          items: [
+            { name: 'Attendance', path: '/attendance', icon: Calendar },
+            { name: 'Courses', path: '/courses', icon: BookOpen },
+            { name: 'Timetable', path: '/timetable', icon: Clock }
+          ]
+        },
+        {
+          title: 'GOVERNANCE',
+          items: [
+            { name: 'Faculty Workload', path: '/faculty-workload', icon: Briefcase },
+            { name: 'Leave Management', path: '/leaves', icon: FileText },
+            { name: 'Approvals', path: '/approvals', icon: ShieldCheck, badge: 'Required' },
+            { name: 'Notices', path: '/notices', icon: Bell },
+            { name: 'Meetings', path: '/meetings', icon: Users },
+            { name: 'Regulations', path: '/regulations', icon: Search }
+          ]
+        },
+        {
+          title: 'INTELLIGENCE',
+          items: [
+            { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+            { name: 'Agent Traces', path: '/agent-traces', icon: GitBranch, badge: 'LangGraph' }
+          ]
+        },
+        {
+          title: 'ACCOUNT',
+          items: [
+            { name: 'Profile', path: '/profile', icon: User }
+          ]
+        }
+      ];
+    } else {
+      // Admin
+      return [
+        {
+          title: 'CORE',
+          items: [
+            { name: 'Dashboard', path: '/', icon: LayoutDashboard },
+            { name: 'AI Secretary', path: '/ai-secretary', icon: Bot, badge: 'Agentic' },
+            { name: 'System Health', path: '/system-health', icon: Activity }
+          ]
+        },
+        {
+          title: 'ACADEMICS',
+          items: [
+            { name: 'Attendance', path: '/attendance', icon: Calendar },
+            { name: 'Courses', path: '/courses', icon: BookOpen },
+            { name: 'Timetable', path: '/timetable', icon: Clock }
+          ]
+        },
+        {
+          title: 'GOVERNANCE',
+          items: [
+            { name: 'Faculty Workload', path: '/faculty-workload', icon: Briefcase },
+            { name: 'Leave Management', path: '/leaves', icon: FileText },
+            { name: 'Approvals', path: '/approvals', icon: ShieldCheck, badge: 'Required' },
+            { name: 'Notices', path: '/notices', icon: Bell },
+            { name: 'Meetings', path: '/meetings', icon: Users },
+            { name: 'Regulations', path: '/regulations', icon: Search }
+          ]
+        },
+        {
+          title: 'INTELLIGENCE',
+          items: [
+            { name: 'Analytics', path: '/analytics', icon: BarChart3 },
+            { name: 'Agent Traces', path: '/agent-traces', icon: GitBranch, badge: 'LangGraph' }
+          ]
+        },
+        {
+          title: 'ACCOUNT',
+          items: [
+            { name: 'Profile', path: '/profile', icon: User }
+          ]
+        }
+      ];
     }
-  ];
+  };
+
+  const navSections = getNavSections(role);
 
   return (
     <aside style={{
@@ -123,72 +254,67 @@ export const Sidebar = ({ isOpen, toggleSidebar }) => {
         flexDirection: 'column',
         gap: '20px'
       }}>
-        {navSections.map((section, idx) => {
-          const visibleItems = section.items.filter(item => item.roles.includes(role));
-          if (visibleItems.length === 0) return null;
-
-          return (
-            <div key={idx}>
-              <div style={{
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                color: '#64748b',
-                letterSpacing: '0.08em',
-                padding: '0 12px 8px 12px'
-              }}>
-                {section.title}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                {visibleItems.map((item, itemIdx) => {
-                  const Icon = item.icon;
-                  return (
-                    <NavLink
-                      key={itemIdx}
-                      to={item.path}
-                      end={item.path === '/'}
-                      style={({ isActive }) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '10px 14px',
-                        borderRadius: '10px',
-                        fontSize: '0.88rem',
-                        fontWeight: isActive ? 700 : 500,
-                        color: isActive ? '#ffffff' : '#94a3b8',
-                        background: isActive 
-                          ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.2) 100%)' 
-                          : 'transparent',
-                        border: isActive ? '1px solid rgba(129, 140, 248, 0.3)' : '1px solid transparent',
-                        textDecoration: 'none',
-                        transition: 'all 0.2s ease'
-                      })}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <Icon size={18} />
-                        <span>{item.name}</span>
-                      </div>
-                      {item.badge && (
-                        <span style={{
-                          fontSize: '0.65rem',
-                          fontWeight: 700,
-                          padding: '2px 6px',
-                          borderRadius: '6px',
-                          background: item.badge === 'Agentic' || item.badge === 'LangGraph' 
-                            ? 'rgba(99, 102, 241, 0.2)' 
-                            : 'rgba(234, 179, 8, 0.2)',
-                          color: item.badge === 'Agentic' || item.badge === 'LangGraph' ? '#818cf8' : '#facc15',
-                          border: '1px solid rgba(255, 255, 255, 0.1)'
-                        }}>
-                          {item.badge}
-                        </span>
-                      )}
-                    </NavLink>
-                  );
-                })}
-              </div>
+        {navSections.map((section, idx) => (
+          <div key={idx}>
+            <div style={{
+              fontSize: '0.68rem',
+              fontWeight: 700,
+              color: '#64748b',
+              letterSpacing: '0.08em',
+              padding: '0 12px 8px 12px'
+            }}>
+              {section.title}
             </div>
-          );
-        })}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {section.items.map((item, itemIdx) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink
+                    key={itemIdx}
+                    to={item.path}
+                    end={item.path === '/'}
+                    style={({ isActive }) => ({
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '10px 14px',
+                      borderRadius: '10px',
+                      fontSize: '0.88rem',
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? '#ffffff' : '#94a3b8',
+                      background: isActive 
+                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.2) 100%)' 
+                        : 'transparent',
+                      border: isActive ? '1px solid rgba(129, 140, 248, 0.3)' : '1px solid transparent',
+                      textDecoration: 'none',
+                      transition: 'all 0.2s ease'
+                    })}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Icon size={18} />
+                      <span>{item.name}</span>
+                    </div>
+                    {item.badge && (
+                      <span style={{
+                        fontSize: '0.65rem',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '6px',
+                        background: item.badge === 'Agentic' || item.badge === 'LangGraph' 
+                          ? 'rgba(99, 102, 241, 0.2)' 
+                          : 'rgba(234, 179, 8, 0.2)',
+                        color: item.badge === 'Agentic' || item.badge === 'LangGraph' ? '#818cf8' : '#facc15',
+                        border: '1px solid rgba(255, 255, 255, 0.1)'
+                      }}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Footer Profile & Logout */}
@@ -230,7 +356,7 @@ export const Sidebar = ({ isOpen, toggleSidebar }) => {
               {user?.name || 'User'}
             </div>
             <div style={{ fontSize: '0.72rem', color: '#94a3b8', textTransform: 'capitalize' }}>
-              {user?.role || 'student'} • {user?.department || 'CSE'}
+              {role} • {user?.department || 'CSE'}
             </div>
           </div>
         </NavLink>

@@ -5,6 +5,8 @@ import {
   ShieldAlert, ShieldCheck, Filter, Search, Award, RefreshCw 
 } from 'lucide-react';
 
+import { LoadingState, EmptyState, ErrorState } from './StateFeedback';
+
 export const FacultyApprovalPortal = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('pending'); // 'pending' | 'history'
@@ -204,13 +206,13 @@ export const FacultyApprovalPortal = () => {
 
       {/* Main List Rendering */}
       {loading ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Loading leave governance records...
-        </div>
+        <LoadingState message="Loading pending leave approvals..." />
       ) : filteredLeaves.length === 0 ? (
-        <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
-          {activeTab === 'pending' ? '🎉 No pending leave applications requiring approval!' : 'No reviewed leave history records found.'}
-        </div>
+        <EmptyState
+          title={activeTab === 'pending' ? 'No pending approvals' : 'No reviewed leave history'}
+          description={activeTab === 'pending' ? "✓ You're all caught up. All submitted leave requests have been reviewed." : "No historical leave applications recorded for this filter."}
+          icon={CheckCircle2}
+        />
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {filteredLeaves.map((leave) => {

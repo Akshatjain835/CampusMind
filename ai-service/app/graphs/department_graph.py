@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import Dict, Any, List, TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from app.agents.llm_factory import get_llm
@@ -111,62 +112,69 @@ def rag_node(state: DepartmentState) -> DepartmentState:
         "agent_chain": chain
     }
 
+import re
+
+def extract_target_section_and_semester_dept(query: str, default_section: str = "Section A", default_semester: str = "6th Semester") -> tuple:
+    query_upper = (query or "").upper()
+    
+    target_section = default_section
+    sec_match = re.search(r'\b(?:SECTION|SEC|SEC-)\s*([A-F0-9]+)\b', query_upper)
+    if not sec_match:
+        sec_match = re.search(r'\bFOR\s+SECTION\s*([A-F0-9]+)\b', query_upper)
+    if sec_match:
+        sec_str = sec_match.group(1).strip()
+        target_section = f"Section {sec_str}"
+
+    target_semester = default_semester
+    sem_match = re.search(r'\b(\d+)(?:ST|ND|RD|TH)?\s*(?:SEM|SEMESTER)\b', query_upper)
+    if not sem_match:
+        sem_match = re.search(r'\b(?:SEM|SEMESTER)\s*(\d+)\b', query_upper)
+    if sem_match:
+        sem_num = sem_match.group(1).strip()
+        target_semester = f"{sem_num}th Semester"
+
+    return target_section, target_semester
+
 def timetable_agent_node(state: DepartmentState) -> DepartmentState:
     chain = state.get("agent_chain", [])
     chain.append("Timetable Agent")
     user_name = state.get("user_name", "Student")
-    semester = state.get("semester", "6th Semester")
-    section = state.get("section", "Section A")
+    query = state.get("query", "")
+    default_sec = state.get("section", "Section A")
+    default_sem = state.get("semester", "6th Semester")
+    
+    section, semester = extract_target_section_and_semester_dept(query, default_sec, default_sem)
 
     # Dynamic Department & Section Specific Timetable Schedules
-    if "E" in section or "F" in section or "ece" in str(state.get("department", "")).lower():
+    sec_letter = section.strip().split()[-1].upper() if section else "A"
+    
+    if sec_letter == "D":
         schedule_text = (
-            f"• **10:00 AM - 11:00 AM**: EC601 Analog & Digital Signals (Dr. A. Verma - Room E-101)\n"
-            f"• **11:00 AM - 12:00 PM**: EC602 VLSI System Design (Prof. S. Gupta - Room E-101)\n"
+            f"• **10:00 AM - 11:00 AM**: CS604 Software Engineering (Prof. Anita Roy - Room 402)\n"
+            f"• **11:00 AM - 12:00 PM**: CS602 Computer Networks (Dr. R. K. Sharma - Room 402)\n"
             f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
-            f"• **02:00 PM - 04:00 PM**: EC605 Microwave & Antenna Practical (Dr. M. Rao - Communication Lab 202)"
+            f"• **02:00 PM - 04:00 PM**: CS605 Web & Cloud Computing Practical (Dr. V. Patel - Advanced Computing Lab 3)"
         )
-    elif "M" in section or "N" in section or "civil" in str(state.get("department", "")).lower():
+    elif sec_letter == "C":
         schedule_text = (
-            f"• **10:00 AM - 11:00 AM**: CE501 Structural Analysis II (Dr. P. Sharma - Hall C-1)\n"
-            f"• **11:00 AM - 12:00 PM**: CE502 Geotechnical Engineering (Prof. V. Kumar - Hall C-1)\n"
+            f"• **10:00 AM - 11:00 AM**: CS603 Artificial Intelligence (Dr. V. Patel - Room 301)\n"
+            f"• **11:00 AM - 12:00 PM**: CS601 Compiler Design (Dr. R. K. Sharma - Room 301)\n"
             f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
-            f"• **02:00 PM - 04:00 PM**: CE505 Surveying & Fluid Mechanics Lab (Dr. K. Joshi - Survey Field)"
+            f"• **02:00 PM - 04:00 PM**: CS604 Software Engineering Lab (Prof. Anita Roy - Net Lab 102)"
         )
-    elif "G" in section or "H" in section or "electrical" in str(state.get("department", "")).lower():
-        schedule_text = (
-            f"• **10:00 AM - 11:00 AM**: EE401 Power Systems Analysis (Dr. H. Roy - Room EE-201)\n"
-            f"• **11:00 AM - 12:00 PM**: EE402 Control Systems Engineering (Prof. D. Shah - Room EE-201)\n"
-            f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
-            f"• **02:00 PM - 04:00 PM**: EE405 Electrical Machines Practical (Dr. N. Bose - High Voltage Lab)"
-        )
-    elif "K" in section or "L" in section or "mechanical" in str(state.get("department", "")).lower():
-        schedule_text = (
-            f"• **10:00 AM - 11:00 AM**: ME601 Thermodynamics & Heat Transfer (Dr. T. Reddy - Workshop A)\n"
-            f"• **11:00 AM - 12:00 PM**: ME602 Machine Design & Kinematics (Prof. A. Gill - Workshop A)\n"
-            f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
-            f"• **02:00 PM - 04:00 PM**: ME605 CAD/CAM & Fluid Power Lab (Dr. B. Das - CAD Lab 3)"
-        )
-    elif "IT" in section or "information" in str(state.get("department", "")).lower():
-        schedule_text = (
-            f"• **10:00 AM - 11:00 AM**: IT601 Cloud Security & Distributed Systems (Dr. N. Sinha - Lab IT-1)\n"
-            f"• **11:00 AM - 12:00 PM**: IT602 Full-Stack Web Architecture (Prof. S. Paul - Lab IT-1)\n"
-            f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
-            f"• **02:00 PM - 04:00 PM**: IT605 Data Mining & Analytics Practical (Dr. R. Kapoor - IT Lab 2)"
-        )
-    elif "4th" in semester and "B" in section:
-        schedule_text = (
-            f"• **10:00 AM - 11:00 AM**: CS401 Operating Systems (Dr. S. Mehta - Room 204)\n"
-            f"• **11:00 AM - 12:00 PM**: CS402 Discrete Mathematics (Prof. R. Singh - Room 204)\n"
-            f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
-            f"• **02:00 PM - 04:00 PM**: CS405 Digital Electronics Practical (Dr. V. Patel - Lab 102)"
-        )
-    elif "6th" in semester and "B" in section:
+    elif sec_letter == "B":
         schedule_text = (
             f"• **10:00 AM - 11:00 AM**: CS604 Software Engineering (Prof. Anita Roy - Room 305)\n"
             f"• **11:00 AM - 12:00 PM**: CS605 Cloud Computing & DevOps (Dr. S. Mehta - Room 305)\n"
             f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
             f"• **02:00 PM - 04:00 PM**: CS606 Web Technologies Lab (Dr. R. K. Sharma - Net Lab 104)"
+        )
+    elif "E" in section or "F" in section or "ece" in str(state.get("department", "")).lower():
+        schedule_text = (
+            f"• **10:00 AM - 11:00 AM**: EC601 Analog & Digital Signals (Dr. A. Verma - Room E-101)\n"
+            f"• **11:00 AM - 12:00 PM**: EC602 VLSI System Design (Prof. S. Gupta - Room E-101)\n"
+            f"• **12:00 PM - 01:00 PM**: Lunch Break\n"
+            f"• **02:00 PM - 04:00 PM**: EC605 Microwave & Antenna Practical (Dr. M. Rao - Communication Lab 202)"
         )
     else:
         schedule_text = (

@@ -74,7 +74,7 @@ class LeaveEvaluationRequest(BaseModel):
     reason: str
     current_attendance: float = 80.0
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def read_root():
     return {
         "status": "online",
@@ -82,7 +82,7 @@ def read_root():
         "version": "1.0.0"
     }
 
-@app.get("/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
 def health_check():
     return {"status": "healthy"}
 

@@ -1,24 +1,30 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { BookOpen, User, Award, CheckCircle } from 'lucide-react';
 
 export const CoursesPage = () => {
-  const courses = [
+  const { user } = useAuth();
+  const [courses] = useState([
     { code: 'CS601', title: 'Compiler Design', faculty: 'Prof. Rajesh Kumar', credits: 4, type: 'Core Theory', attendance: '90.5%' },
     { code: 'CS602', title: 'Computer Networks', faculty: 'Prof. Mehta', credits: 4, type: 'Core Theory', attendance: '75.0%' },
     { code: 'CS603', title: 'AI & Machine Learning', faculty: 'Dr. Ananya Verma', credits: 4, type: 'Elective', attendance: '87.5%' },
     { code: 'CS604', title: 'Database Management Systems', faculty: 'Dr. Suresh Sharma', credits: 4, type: 'Core Theory', attendance: '92.8%' },
     { code: 'CS605', title: 'Operating Systems Lab', faculty: 'Prof. Vikram Singh', credits: 2, type: 'Practical Lab', attendance: '80.0%' }
-  ];
+  ]);
+
+  const totalCredits = courses.reduce((sum, c) => sum + c.credits, 0);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Enrolled Courses</h2>
-          <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '4px 0 0 0' }}>6th Semester Computer Science & Engineering</p>
+          <p style={{ fontSize: '0.88rem', color: '#94a3b8', margin: '4px 0 0 0' }}>
+            {user?.semester || '6th Semester'} {user?.department || 'Computer Science & Engineering'}
+          </p>
         </div>
         <div style={{ padding: '8px 16px', borderRadius: '12px', background: 'rgba(99, 102, 241, 0.15)', border: '1px solid rgba(99, 102, 241, 0.3)', color: '#818cf8', fontWeight: 700, fontSize: '0.85rem' }}>
-          Total Credits: 18
+          Total Credits: {totalCredits}
         </div>
       </div>
 
@@ -49,3 +55,4 @@ export const CoursesPage = () => {
     </div>
   );
 };
+

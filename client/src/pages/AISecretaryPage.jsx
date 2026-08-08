@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { HITLApprovalModal } from '../components/HITLApprovalModal';
 import {
@@ -69,6 +69,13 @@ export const AISecretaryPage = () => {
   const [activeChain, setActiveChain] = useState([]);
   const [isStreaming, setIsStreaming] = useState(false);
   const [hitlContext, setHitlContext] = useState(null);
+
+  const chatEndRef = useRef(null);
+
+  // Auto-scroll to bottom of chat as message log grows or streams
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatLogs, activeChain, isStreaming]);
 
   // Fetch persistent chat history on load
   useEffect(() => {
@@ -327,6 +334,7 @@ export const AISecretaryPage = () => {
               {renderFormattedText(msg.text)}
             </div>
           ))}
+          <div ref={chatEndRef} />
         </div>
 
         {/* Chat Input Form */}
@@ -398,6 +406,7 @@ export const AISecretaryPage = () => {
           })}
         </div>
       </div>
+
 
       {/* HITL Modal Integration */}
       <HITLApprovalModal

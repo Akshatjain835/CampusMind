@@ -18,6 +18,7 @@ export const MainLayout = () => {
       case '/courses': return 'Enrolled Academic Courses';
       case '/timetable': return 'Weekly Timetable & Schedule';
       case '/leaves': return 'Student & Faculty Leave Governance';
+      case '/faculty-workload': return 'Faculty Workload Governance & AI Balancing';
       case '/notices': return 'Department Circulars & Notices';
       case '/meetings': return 'Department Meetings & Slots';
       case '/analytics': return 'Executive Department Analytics';

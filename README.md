@@ -99,6 +99,46 @@ npm install
 npm run dev
 ```
 
+---
+
+### 🛡️ Production Deployment (Keeping Uvicorn Alive 24/7)
+
+To keep the FastAPI AI microservice running continuously in production without crashing or stopping when terminals close:
+
+#### Method 1: PM2 (Process Manager 2) — Recommended
+Install PM2 and start all services in daemon mode:
+```bash
+npm install -g pm2
+pm2 start ecosystem.config.cjs
+pm2 save
+pm2 startup
+```
+
+#### Method 2: Systemd Daemon (Linux VPS)
+Create `/etc/systemd/system/campusmind-ai.service`:
+```ini
+[Unit]
+Description=CampusMind FastAPI AI Microservice
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/var/www/CampusMind/ai-service
+ExecStart=/usr/local/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+Enable and start the service:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable campusmind-ai
+sudo systemctl start campusmind-ai
+```
+
+
 Open `http://localhost:3000` in your browser.
 
 ---
