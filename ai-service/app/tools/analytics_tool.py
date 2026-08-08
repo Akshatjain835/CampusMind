@@ -3,8 +3,8 @@ from langchain_core.tools import tool
 
 @tool
 def forecast_exam_eligibility_risk(
-    current_percentage: float, 
-    planned_leave_days: int,
+    current_percentage: float = 75.0, 
+    planned_leave_days: int = 5,
     total_semester_classes: int = 200
 ) -> Dict[str, Any]:
     """

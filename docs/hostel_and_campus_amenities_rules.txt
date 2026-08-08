@@ -1,0 +1,21 @@
+HOSTEL RESIDENCE, CAMPUS AMENITIES & DIGITAL INFRASTRUCTURE
+===================================================================================
+CampusMind Campus Life & Student Facilities Regulations
+
+1. HOSTEL RESIDENCE & NIGHT OUT-PASS RULES
+-----------------------------------------------------------------------------------
+- Night Curfew: 09:30 PM for all hostel residents. Late entries require Warden permission.
+- Out-Pass Application: Submit digital Out-Pass on CampusMind portal 24 hours prior.
+- Parental Consent: Out-pass for overnight stay requires OTP verification from registered parent mobile.
+- Mess Rebate: Students absent for 3 consecutive days or more with approved leave receive ₹150/day mess credit.
+
+2. LIBRARY & DIGITAL LEARNING CENTER (DLC)
+-----------------------------------------------------------------------------------
+- Book Allowance: 4 books for UG students (14-day borrowing period), 6 books for PG/Research scholars.
+- Overdue Fine: ₹5 per day per overdue book.
+- Digital Library: Access to IEEE Xplore, ACM Digital Library, and Springer Link via institute VPN.
+
+3. CAMPUS WIFI & HIGH-PERFORMANCE COMPUTING (HPC) LABS
+-----------------------------------------------------------------------------------
+- Individual Bandwidth: 100 Mbps unthrottled campus WiFi per registered MAC address (max 2 devices).
+- GPU HPC Lab Booking: RTX 4090 / A100 GPU nodes booked via AI Secretary portal for AI/ML projects.

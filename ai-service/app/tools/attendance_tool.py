@@ -32,18 +32,21 @@ def get_attendance(student_id: str = "CURRENT_USER") -> Dict[str, Any]:
 
 @tool
 def calculate_projected_attendance(
-    current_percentage: float, 
-    total_classes: int, 
-    missed_classes: int, 
+    current_percentage: float = 75.0, 
+    total_classes: int = 200, 
+    missed_classes: int = 0, 
+    leave_days: int = 0,
     extra_attended: int = 0
 ) -> Dict[str, Any]:
     """
     Calculates projected attendance percentage after taking leave or attending extra classes.
+    Accepts current_percentage, leave_days, total_classes, missed_classes, extra_attended.
     """
-    attended = int((current_percentage / 100.0) * total_classes)
+    effective_missed = missed_classes if missed_classes > 0 else (leave_days * 3 if leave_days > 0 else 0)
+    attended = int((current_percentage / 100.0) * max(total_classes, 1))
     new_attended = attended + extra_attended
-    new_total = total_classes + missed_classes + extra_attended
-    new_percentage = round((new_attended / new_total) * 100.0, 2)
+    new_total = total_classes + effective_missed + extra_attended
+    new_percentage = round((new_attended / new_total) * 100.0, 2) if new_total > 0 else current_percentage
     
     return {
         "previous_percentage": current_percentage,

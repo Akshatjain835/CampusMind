@@ -1,0 +1,56 @@
+OFFICIAL DEPARTMENTAL TIMETABLES, SECTION SCHEDULES & CLASSROOM ALLOCATIONS
+===================================================================================
+CampusMind Academic Year 2025-2026 | Computer Science & Engineering, ECE, ME, CE & IT
+
+1. COMPUTER SCIENCE & ENGINEERING (CSE) - 6TH SEMESTER
+-----------------------------------------------------------------------------------
+SECTION A (Primary Classroom: Lecture Hall LH-201)
+- Monday:
+  • 09:00 AM - 10:00 AM: CS601 Compiler Design (Dr. R. K. Sharma - Room LH-201)
+  • 10:00 AM - 11:00 AM: CS602 Computer Networks (Prof. Anita Roy - Room LH-201)
+  • 11:15 AM - 12:15 PM: CS603 Artificial Intelligence (Dr. V. Patel - Room LH-201)
+  • 01:15 PM - 02:15 PM: CS604 Software Engineering (Prof. Anita Roy - Room LH-201)
+  • 02:15 PM - 04:15 PM: CS605 AI & Data Structures Lab (Dr. V. Patel - Net Lab 101)
+
+SECTION B (Primary Classroom: Lecture Hall LH-305)
+- Monday:
+  • 09:00 AM - 10:00 AM: CS604 Software Engineering (Prof. Anita Roy - Room LH-305)
+  • 10:00 AM - 11:00 AM: CS605 Cloud Computing & DevOps (Dr. S. Mehta - Room LH-305)
+  • 11:15 AM - 12:15 PM: CS601 Compiler Design (Dr. R. K. Sharma - Room LH-305)
+  • 01:15 PM - 02:15 PM: CS602 Computer Networks (Prof. Anita Roy - Room LH-305)
+  • 02:15 PM - 04:15 PM: CS606 Web Technologies Lab (Dr. R. K. Sharma - Net Lab 104)
+
+SECTION C (Primary Classroom: Lecture Hall LH-301)
+- Monday:
+  • 09:00 AM - 10:00 AM: CS603 Artificial Intelligence (Dr. V. Patel - Room LH-301)
+  • 10:00 AM - 11:00 AM: CS601 Compiler Design (Dr. R. K. Sharma - Room LH-301)
+  • 11:15 AM - 12:15 PM: CS602 Computer Networks (Prof. Anita Roy - Room LH-301)
+  • 01:15 PM - 02:15 PM: CS604 Software Engineering (Prof. Anita Roy - Room LH-301)
+  • 02:15 PM - 04:15 PM: CS604 Software Engineering Lab (Prof. Anita Roy - Net Lab 102)
+
+SECTION D (Primary Classroom: Lecture Hall LH-402)
+- Monday:
+  • 09:00 AM - 10:00 AM: CS604 Software Engineering (Prof. Anita Roy - Room LH-402)
+  • 10:00 AM - 11:00 AM: CS602 Computer Networks (Dr. R. K. Sharma - Room LH-402)
+  • 11:15 AM - 12:15 PM: CS601 Compiler Design (Dr. R. K. Sharma - Room LH-402)
+  • 01:15 PM - 02:15 PM: CS603 Artificial Intelligence (Dr. V. Patel - Room LH-402)
+  • 02:15 PM - 04:15 PM: CS605 Web & Cloud Computing Practical (Dr. V. Patel - Advanced Computing Lab 3)
+
+SECTION E & F (ELECTRONICS & COMMUNICATION ENGINEERING)
+- Monday:
+  • 09:00 AM - 10:00 AM: EC601 Analog & Digital Signals (Dr. A. Verma - Room E-101)
+  • 10:00 AM - 11:00 AM: EC602 VLSI System Design (Prof. S. Gupta - Room E-101)
+  • 11:15 AM - 12:15 PM: EC603 Wireless Communication (Dr. M. Rao - Room E-101)
+  • 02:15 PM - 04:15 PM: EC605 Microwave & Antenna Practical (Dr. M. Rao - Communication Lab 202)
+
+2. FACULTY OFFICE HOURS & ADVISORY FREE SLOTS
+-----------------------------------------------------------------------------------
+- Dr. R. K. Sharma (Compiler Design / HOD CSE): Free Slot Daily 01:30 PM - 02:30 PM (Office: HOD Cabin 101)
+- Prof. Anita Roy (Networks & Software Engg): Free Slot Daily 11:00 AM - 12:00 PM (Office: Cabin 204)
+- Dr. V. Patel (AI & Data Science): Free Slot Daily 03:00 PM - 04:00 PM (Office: AI Center Cabin 302)
+
+3. EXAM TIMETABLE & MID-SEM SCHEDULE
+-----------------------------------------------------------------------------------
+- Mid-Sem Examination Period: March 15 - March 22, 2026
+- End-Sem Examination Period: May 10 - May 25, 2026
+- All students must present hall tickets verified for 75% mandatory attendance.

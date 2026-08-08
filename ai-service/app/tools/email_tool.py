@@ -7,9 +7,9 @@ from langchain_core.tools import tool
 
 @tool
 def send_email_notification(
-    recipients: List[str], 
-    subject: str, 
-    body: str
+    recipients: Optional[List[str]] = None, 
+    subject: str = "CampusMind Academic Notification", 
+    body: str = "Official Department Notice"
 ) -> Dict[str, Any]:
     """
     Sends an automated email notification or official circular dispatch to specified recipients using Nodemailer / SMTP.

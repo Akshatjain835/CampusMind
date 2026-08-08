@@ -84,6 +84,16 @@ def create_fallback_plan(query: str) -> ExecutionPlan:
             requires_parallel_execution=False,
             tasks=tasks
         )
+    elif any(k in query_lower for k in ["timetable", "timettable", "time table", "time-table", "schedule", "class", "classes", "routine", "today", "todays", "pending", "period", "section"]):
+        tasks = [
+            SubTask(id="task_1", agent="timetable_agent", description="Fetch schedule and section lectures for review", dependencies=[])
+        ]
+        return ExecutionPlan(
+            goal="Retrieve section timetable schedule",
+            reasoning="Direct timetable and section schedule query",
+            requires_parallel_execution=False,
+            tasks=tasks
+        )
     elif "eligible" in query_lower or "leave" in query_lower or "attendance" in query_lower:
         tasks = [
             SubTask(id="task_1", agent="attendance_agent", description="Fetch current attendance percentage and course breakdown", dependencies=[]),
@@ -138,16 +148,6 @@ def create_fallback_plan(query: str) -> ExecutionPlan:
             goal="Evaluate Duty Leave guidelines, participation attendance credits, and student support grants",
             reasoning="Duty leave and student code of conduct evaluation",
             requires_parallel_execution=True,
-            tasks=tasks
-        )
-    elif any(k in query_lower for k in ["timetable", "timettable", "time table", "time-table", "schedule", "class", "classes", "routine", "today", "todays", "pending", "period", "section"]):
-        tasks = [
-            SubTask(id="task_1", agent="timetable_agent", description="Fetch schedule and pending lectures for review", dependencies=[])
-        ]
-        return ExecutionPlan(
-            goal="Summarize today's timetable and pending classes",
-            reasoning="Direct timetable and pending schedule query",
-            requires_parallel_execution=False,
             tasks=tasks
         )
     elif "meeting" in query_lower and "notify" in query_lower:
@@ -211,12 +211,15 @@ def planner_node(state: AgentState) -> AgentState:
                 "query": query
             })
             content = res.content if hasattr(res, "content") else str(res)
-            if "```json" in content:
-                content = content.split("```json")[1].split("```")[0].strip()
-            elif "```" in content:
-                content = content.split("```")[1].split("```")[0].strip()
-            data = json.loads(content)
-            plan_obj = ExecutionPlan(**data)
+            
+            import re
+            json_match = re.search(r'\{.*\}', content, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+                data = json.loads(json_str)
+                plan_obj = ExecutionPlan(**data)
+            else:
+                plan_obj = create_fallback_plan(query)
         except Exception as err:
             print(f"[Planner Agent LLM Warning]: {err}. Falling back to deterministic plan.")
             plan_obj = create_fallback_plan(query)

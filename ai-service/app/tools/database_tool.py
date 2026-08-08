@@ -2,7 +2,7 @@ from typing import Dict, Any, Optional
 from langchain_core.tools import tool
 
 @tool
-def execute_sql_query(query: str) -> Dict[str, Any]:
+def execute_sql_query(query: str = "SELECT * FROM students LIMIT 1") -> Dict[str, Any]:
     """
     Executes a safe read-only SQL query against the CampusMind university database.
     """

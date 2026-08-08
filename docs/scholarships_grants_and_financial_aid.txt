@@ -1,0 +1,20 @@
+SCHOLARSHIPS, RESEARCH GRANTS & STUDENT FINANCIAL AID
+===================================================================================
+CampusMind Merit & Need-Based Student Support Regulations
+
+1. MERIT SCHOLARSHIPS & TUITION WAIVERS
+-----------------------------------------------------------------------------------
+- Director's Gold Medal Scholarship: 100% tuition waiver for 1st rank holder in each department.
+- Merit-Cum-Means Scholarship: 50% tuition waiver for CGPA >= 8.5 with annual family income < ₹6.0 Lakhs.
+- Attendance Eligibility Criteria: Minimum 85% attendance required in all subjects to maintain scholarship.
+
+2. HACKATHON & CONFERENCE TRAVEL GRANTS
+-----------------------------------------------------------------------------------
+- National Hackathons (Smart India Hackathon, Techfest): Reimbursement of 2nd AC train fare + ₹3,000/team allowance.
+- International IEEE/ACM Conference Paper Presentation: Grant up to ₹50,000 for registration & travel.
+- Application Workflow: Apply via AI Secretary -> Recommendation by Faculty Advisor -> HOD Sanction.
+
+3. INNOVATION & PROTOTYPE DEVELOPMENT FUND
+-----------------------------------------------------------------------------------
+- Student Startup Seed Grant: Funding up to ₹1,00,000 for approved hardware/software prototypes.
+- Managed by Institute Innovation Council (IIC) & AI Incubation Cell.
