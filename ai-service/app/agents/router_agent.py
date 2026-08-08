@@ -6,13 +6,13 @@ from app.state.state import AgentState
 from app.observability.langsmith_tracer import audit_agent_step
 
 ROUTER_PROMPT = """You are the Academic Intent Router Agent for CampusMind.
-Analyze the user query and output a JSON object specifying the optimal primary specialist agent and execution strategy.
+Analyze the user query (handling any typos, misspellings, or section references like "timettable", "section A", etc.) and output a JSON object specifying the optimal primary specialist agent and execution strategy.
 
 Available Specialist Agents:
 - "attendance_agent": Attendance records, attendance percentage, class hours.
 - "leave_agent": Medical leave, leave application, leave balance, condonation.
 - "faculty_agent": Faculty search, faculty availability, advisor details.
-- "timetable_agent": Class schedules, free slot detection, room bookings.
+- "timetable_agent": Class schedules, routine, timetables, section schedule, free slot detection, room bookings.
 - "notice_agent": Academic circulars, exam dates, official notices.
 - "rag_agent": University regulations, NAAC/NBA policies, grading rules, fee rules.
 - "analytics_agent": Attendance risk forecasting, CGPA prediction, extra classes required.
@@ -42,7 +42,7 @@ def route_query_with_llm(query: str) -> Dict[str, Any]:
         if "leave" in query_lower:
             primary = "leave_agent"
             cat = "leave_management"
-        elif any(k in query_lower for k in ["class", "classes", "schedule", "timetable", "routine"]):
+        elif any(k in query_lower for k in ["class", "classes", "schedule", "timetable", "timettable", "time table", "time-table", "routine", "period", "section"]):
             primary = "timetable_agent"
             cat = "scheduling"
         elif any(k in query_lower for k in ["faculty", "meeting"]):

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Shield, Sparkles, User, GraduationCap, Briefcase, 
@@ -17,22 +18,31 @@ const DEPARTMENT_SECTIONS = {
 };
 
 export const LoginPage = () => {
-  const { login, register, seedDemoData } = useAuth();
+  const { user, login, register, seedDemoData } = useAuth();
+  const navigate = useNavigate();
+
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [seedMessage, setSeedMessage] = useState('');
-  const [showDemoDrawer, setShowDemoDrawer] = useState(false);
+  const [showDemoDrawer, setShowDemoDrawer] = useState(true);
 
-  // Form fields
+  // Form fields (pre-filled with default demo credentials)
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('student@department.ai');
+  const [password, setPassword] = useState('password123');
   const [role, setRole] = useState('student');
   const [department, setDepartment] = useState('Computer Science & Engineering');
   const [section, setSection] = useState('Section A');
   const [rollNumber, setRollNumber] = useState('');
   const [designation, setDesignation] = useState('');
+
+  // Redirect to dashboard if already authenticated
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -45,6 +55,7 @@ export const LoginPage = () => {
       } else {
         await login(email, password);
       }
+      navigate('/', { replace: true });
     } catch (err) {
       setError(err.message || 'An error occurred during authentication');
     } finally {
@@ -57,11 +68,13 @@ export const LoginPage = () => {
     setLoading(true);
     try {
       await login(demoEmail, demoPassword);
+      navigate('/', { replace: true });
     } catch (err) {
       setError('User not found. Auto-seeding database demo accounts...');
       await seedDemoData();
       try {
         await login(demoEmail, demoPassword);
+        navigate('/', { replace: true });
       } catch (retryErr) {
         setError('Login failed after seeding. Ensure backend server & MongoDB are running.');
       }

@@ -19,7 +19,10 @@ Available Specialist Agents:
 8. "database_agent": Queries SQL/MongoDB databases for direct student records or course info.
 9. "email_agent": Prepares and dispatches emails or notifications to faculty or students.
 
-Rules for Decomposing Tasks:
+Rules for Decomposing Tasks & Intent Classification:
+- Intelligently understand the user's intent even if the query contains typos or misspellings (e.g. "timettable", "schedulee", "attandance").
+- If the user asks for class timings, routines, section schedules, or timetables (e.g. "What is the timettable for section A"), assign "timetable_agent".
+- Do NOT assign "rag_agent" for routine class schedule queries unless explicit university policy guidelines or regulation clauses are requested.
 - Do NOT just assign a single agent if the query requires multi-step reasoning.
 - Break multi-part requests into step-by-step DAG subtasks.
 - Specify clear dependencies (e.g., task_2 depends on task_1 if task_2 needs data produced by task_1).
@@ -137,7 +140,7 @@ def create_fallback_plan(query: str) -> ExecutionPlan:
             requires_parallel_execution=True,
             tasks=tasks
         )
-    elif any(k in query_lower for k in ["timetable", "time table", "schedule", "class", "classes", "routine", "today", "todays", "pending"]):
+    elif any(k in query_lower for k in ["timetable", "timettable", "time table", "time-table", "schedule", "class", "classes", "routine", "today", "todays", "pending", "period", "section"]):
         tasks = [
             SubTask(id="task_1", agent="timetable_agent", description="Fetch schedule and pending lectures for review", dependencies=[])
         ]

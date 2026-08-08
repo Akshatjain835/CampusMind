@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Dict, Any, List, TypedDict, Optional
 from langgraph.graph import StateGraph, END
@@ -16,20 +17,51 @@ class DepartmentState(TypedDict):
     final_response: Optional[str]
 
 def router_node(state: DepartmentState) -> DepartmentState:
-    query = state["query"].lower()
+    raw_query = state.get("query", "")
+    query_lower = raw_query.lower()
     chain = state.get("agent_chain", [])
-    chain.append("Router Agent")
     
-    if "attendance" in query or "eligible" in query or "sitting" in query:
-        intent = "attendance_query"
-    elif "leave" in query or "medical" in query:
-        intent = "leave_application"
-    elif "timetable" in query or "schedule" in query or "slot" in query:
-        intent = "timetable_query"
-    elif "nba" in query or "naac" in query or "rule" in query or "regulation" in query:
-        intent = "rag_regulation"
-    else:
-        intent = "general_academic_query"
+    intent = None
+    llm = get_llm(temperature=0.0)
+    if llm:
+        try:
+            prompt = (
+                "You are an Academic Intent Classification Agent for CampusMind.\n"
+                "Analyze the user query (handling any typos, misspellings, or section references) "
+                "and classify it into EXACTLY ONE of these categories:\n"
+                "- 'timetable_query': Schedules, class routines, timetables, periods, free slots, class timings, section timetables.\n"
+                "- 'attendance_query': Attendance percentages, total classes attended/missed, exam eligibility due to attendance.\n"
+                "- 'leave_application': Medical leave, leave requests, leave balance, condonation requests.\n"
+                "- 'rag_regulation': University regulations, NAAC/NBA policies, grading rules, exam rules.\n"
+                "- 'general_academic_query': General questions or other inquiries.\n\n"
+                f"User Query: \"{raw_query}\"\n\n"
+                "Respond ONLY with a JSON object: {\"intent\": \"category_name\", \"reasoning\": \"explanation\"}"
+            )
+            res = llm.invoke(prompt)
+            content = res.content if hasattr(res, "content") else str(res)
+            if "```json" in content:
+                content = content.split("```json")[1].split("```")[0].strip()
+            elif "```" in content:
+                content = content.split("```")[1].split("```")[0].strip()
+            parsed = json.loads(content)
+            intent = parsed.get("intent")
+            print(f"[LLM Router Node]: Detected intent '{intent}' for query: '{raw_query}'")
+            chain.append("LLM Router Agent")
+        except Exception as err:
+            print(f"[LLM Router Warning]: LLM intent detection failed ({err}). Falling back to rule-based router.")
+
+    if not intent or intent not in ["timetable_query", "attendance_query", "leave_application", "rag_regulation", "general_academic_query"]:
+        chain.append("Rule Router Agent (Fallback)")
+        if any(k in query_lower for k in ["attendance", "eligible", "sitting", "present", "absent"]):
+            intent = "attendance_query"
+        elif any(k in query_lower for k in ["leave", "medical", "sanction", "condonation"]):
+            intent = "leave_application"
+        elif any(k in query_lower for k in ["timetable", "timettable", "time table", "time-table", "schedule", "slot", "period", "routine", "section", "class"]):
+            intent = "timetable_query"
+        elif any(k in query_lower for k in ["nba", "naac", "rule", "regulation", "policy", "clause"]):
+            intent = "rag_regulation"
+        else:
+            intent = "general_academic_query"
         
     return {
         **state,

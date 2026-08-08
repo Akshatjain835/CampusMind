@@ -26,8 +26,8 @@ def get_llm(temperature: float = 0.3):
                 model="gemini-2.0-flash",
                 google_api_key=gemini_key,
                 temperature=temperature,
-                timeout=4.0,
-                max_retries=0
+                timeout=10.0,
+                max_retries=1
             )
             # Quick ping test to verify rate limit & quota status
             llm.invoke("ping")

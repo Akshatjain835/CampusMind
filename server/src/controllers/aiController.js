@@ -45,6 +45,8 @@ export const processAiQuery = async (req, res) => {
     const userName = req.user && req.user.name ? String(req.user.name) : 'Student';
     const userRole = req.user && req.user.role ? String(req.user.role) : 'student';
 
+    const studentId = req.user?.rollNumber || req.user?.studentId || (req.user?._id ? req.user._id.toString() : 'STU1024');
+
     // 1. Save User Question to MongoDB
     await ChatMessage.create({
       user: req.user._id,
@@ -66,6 +68,7 @@ export const processAiQuery = async (req, res) => {
       const payload = {
         user_name: String(userName),
         user_role: String(userRole),
+        student_id: String(studentId),
         department: String(req.user?.department || 'Computer Science & Engineering'),
         semester: String(req.user?.semester || '6th Semester'),
         section: String(req.user?.section || 'Section A'),
@@ -142,6 +145,7 @@ export const streamAiQuery = async (req, res) => {
     const userId = req.user && req.user._id ? req.user._id.toString() : 'default_user';
     const userName = req.user && req.user.name ? String(req.user.name) : 'Student';
     const userRole = req.user && req.user.role ? String(req.user.role) : 'student';
+    const studentId = req.user?.rollNumber || req.user?.studentId || (req.user?._id ? req.user._id.toString() : 'STU1024');
 
     // 1. Save User Question to MongoDB
     await ChatMessage.create({
@@ -158,6 +162,7 @@ export const streamAiQuery = async (req, res) => {
     const payload = {
       user_name: String(userName),
       user_role: String(userRole),
+      student_id: String(studentId),
       department: String(req.user?.department || 'Computer Science & Engineering'),
       semester: String(req.user?.semester || '6th Semester'),
       section: String(req.user?.section || 'Section A'),

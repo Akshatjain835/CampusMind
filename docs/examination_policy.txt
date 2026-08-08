@@ -1,0 +1,36 @@
+==============================================================================
+DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING - EXAMINATION & EVALUATION POLICY
+==============================================================================
+
+SECTION 1: EXAMINATION STRUCTURE & WEIGHTAGE
+------------------------------------------------------------------------------
+Clause 1.1: Assessment Components
+- Continuous Internal Evaluation (CIE): 40% Weightage
+  * Mid-Semester Examination: 20%
+  * Continuous Quiz / Assignment Assessments: 10%
+  * Practical Lab Performance / Mini-Project: 10%
+- Semester End Examination (SEE): 60% Weightage
+  * Mandatory minimum score of 40% in SEE is required to pass the subject.
+
+Clause 1.2: Course Outcome (CO) & Program Outcome (PO) Attainment
+- Every examination question must map to a specific Course Outcome (CO1 - CO6).
+- Minimum target for CO attainment is 65% class average.
+- Faculty members must update CO-PO attainment calculations in the DepartmentAI portal within 14 days of exam result declaration for NAAC/NBA compliance audits.
+
+SECTION 2: MID-SEMESTER & MAKEUP EXAMINATIONS
+------------------------------------------------------------------------------
+Clause 2.1: Mid-Semester Exam Attendance
+- Minimum 75% attendance is mandatory to sit for Mid-Semester Examinations.
+- Students missing Mid-Sem exams due to approved medical grounds (supported by medical certificate) or official institutional Duty Leave are eligible for a Makeup Mid-Semester Examination.
+- Makeup exams are conducted within 10 working days of the primary exam schedule.
+
+Clause 2.2: Re-evaluation & Answer Script Verification
+- Students may apply for answer script re-evaluation or photocopy inspection within 7 working days of result notification.
+- A fee of Rs. 300 per paper applies for re-evaluation. If the grade improves by more than 10%, 50% of the fee is refunded.
+
+SECTION 3: REMEDIAL CLASSES & ACADEMIC SUPPORT
+------------------------------------------------------------------------------
+Clause 3.1: Identification of Slow Learners
+- Students scoring below 50% in Mid-Sem exams or having attendance between 65%-74% are classified as Slow Learners needing Academic Remediation.
+- Faculty advisors must assign 2 hours/week of Remedial Classes for slow learners.
+- Completion of remedial classes grants up to 5% bonus attendance credit towards condonation eligibility.

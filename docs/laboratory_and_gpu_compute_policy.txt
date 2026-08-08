@@ -1,0 +1,24 @@
+==============================================================================
+DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING - LAB & GPU COMPUTE POLICY
+==============================================================================
+
+SECTION 1: LAB BATCHES & INSTRUCTOR ALLOCATION
+------------------------------------------------------------------------------
+Clause 1.1: Maximum Batch Capacity
+- Standard practical lab batch size is capped at 30 students per instructor/TA to ensure hands-on mentoring.
+- For AI/ML & High-Performance Computing labs, 2 faculty members/TAs are assigned per 30-student section.
+
+Clause 1.2: Lab Attendance & Evaluation
+- 100% lab experiment completion is required before final practical examinations.
+- Continuous lab evaluation accounts for 10% of total course marks (Experiment accuracy: 5%, Viva voce: 3%, Lab Record: 2%).
+
+SECTION 2: AI/ML HIGH-PERFORMANCE COMPUTING (HPC) & GPU ACCESS
+------------------------------------------------------------------------------
+Clause 2.1: GPU Server Resource Allocation
+- Priority allocation of NVIDIA A100/RTX 4090 GPU server nodes is reserved for 3rd & 4th-year Capstone AI/ML projects and M.Tech/Ph.D. research batches.
+- Students must request GPU compute slots via the DepartmentAI Compute Portal with project advisor approval.
+
+Clause 2.2: Compute Usage Rules & Fair Share
+- Maximum continuous GPU job execution limit is 12 hours for undergraduate projects and 48 hours for Ph.D. research.
+- Jobs exceeding resource limits or idling without GPU utilization for > 2 hours will be automatically suspended by the cluster scheduler.
+- Commercial or unauthorized mining workloads lead to immediate lab access revocation and disciplinary action.

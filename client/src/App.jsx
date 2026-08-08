@@ -1,7 +1,25 @@
 import React, { Component } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './components/LoginPage';
-import { Dashboard } from './components/Dashboard';
+import { MainLayout } from './components/MainLayout';
+
+// Page Imports
+import { DashboardPage } from './pages/DashboardPage';
+import { AISecretaryPage } from './pages/AISecretaryPage';
+import { AttendancePage } from './pages/AttendancePage';
+import { CoursesPage } from './pages/CoursesPage';
+import { TimetablePage } from './pages/TimetablePage';
+import { LeaveManagementPage } from './pages/LeaveManagementPage';
+import { NoticesPage } from './pages/NoticesPage';
+import { MeetingsPage } from './pages/MeetingsPage';
+import { AnalyticsPage } from './pages/AnalyticsPage';
+import { ApprovalsPage } from './pages/ApprovalsPage';
+import { RegulationsPage } from './pages/RegulationsPage';
+import { AgentTracesPage } from './pages/AgentTracesPage';
+import { SystemHealthPage } from './pages/SystemHealthPage';
+import { ProfilePage } from './pages/ProfilePage';
+
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 
 // React Glassmorphic Global Error Boundary
@@ -83,7 +101,8 @@ class ErrorBoundary extends Component {
   }
 }
 
-const MainApp = () => {
+// Protected Layout Guard Component
+const ProtectedApp = () => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -94,14 +113,15 @@ const MainApp = () => {
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'column',
-        gap: '16px'
+        gap: '16px',
+        background: '#0f172a'
       }}>
         <div style={{
           width: '48px',
           height: '48px',
           borderRadius: '50%',
           border: '3px solid rgba(99, 102, 241, 0.2)',
-          borderTopColor: 'var(--primary)',
+          borderTopColor: '#818cf8',
           animation: 'spin 1s linear infinite'
         }} />
         <style>{`
@@ -110,21 +130,50 @@ const MainApp = () => {
             100% { transform: rotate(360deg); }
           }
         `}</style>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+        <span style={{ color: '#94a3b8', fontSize: '0.9rem', fontWeight: 600 }}>
           Loading DepartmentAI System...
         </span>
       </div>
     );
   }
 
-  return user ? <Dashboard /> : <LoginPage />;
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return (
+    <Routes>
+      <Route path="/" element={<MainLayout />}>
+        <Route index element={<DashboardPage />} />
+        <Route path="ai-secretary" element={<AISecretaryPage />} />
+        <Route path="attendance" element={<AttendancePage />} />
+        <Route path="courses" element={<CoursesPage />} />
+        <Route path="timetable" element={<TimetablePage />} />
+        <Route path="leaves" element={<LeaveManagementPage />} />
+        <Route path="notices" element={<NoticesPage />} />
+        <Route path="meetings" element={<MeetingsPage />} />
+        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="regulations" element={<RegulationsPage />} />
+        <Route path="agent-traces" element={<AgentTracesPage />} />
+        <Route path="system-health" element={<SystemHealthPage />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  );
 };
 
 export default function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <MainApp />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/*" element={<ProtectedApp />} />
+          </Routes>
+        </BrowserRouter>
       </AuthProvider>
     </ErrorBoundary>
   );

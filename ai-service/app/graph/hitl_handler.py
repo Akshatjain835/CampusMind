@@ -37,7 +37,7 @@ def check_human_approval_required(state: AgentState) -> AgentState:
     
     # Explicit action verbs indicating a direct submission/action request
     is_action_command = any(k in query_lower for k in [
-        "apply", "submit", "sanction", "approve", "book", "override", "clearance"
+        "apply", "submit", "sanction", "approve", "book", "override", "clearance", "condonation", "schedule", "request"
     ])
     
     # Informational question phrases indicating a inquiry rather than an immediate submission

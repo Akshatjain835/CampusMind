@@ -33,6 +33,23 @@ const renderFormattedText = (text) => {
       return <div key={idx} style={{ height: '6px' }} />;
     }
 
+    if (line.startsWith('>')) {
+      return (
+        <div key={idx} style={{
+          borderLeft: '3px solid #38bdf8',
+          background: 'rgba(56, 189, 248, 0.08)',
+          padding: '8px 12px',
+          margin: '6px 0',
+          borderRadius: '0 8px 8px 0',
+          fontSize: '0.86rem',
+          color: '#cbd5e1',
+          fontStyle: 'italic'
+        }}>
+          {line.slice(1).trim()}
+        </div>
+      );
+    }
+
     if (line.startsWith('•') || line.startsWith('-')) {
       return (
         <div key={idx} style={{ paddingLeft: '14px', margin: '3px 0', color: '#e2e8f0' }}>
@@ -140,7 +157,8 @@ export const Dashboard = () => {
         body: JSON.stringify({
           query: userText,
           user_name: user?.name || 'User',
-          user_role: user?.role || 'student'
+          user_role: user?.role || 'student',
+          student_id: user?.rollNumber || user?.studentId || user?._id
         })
       });
 
@@ -177,6 +195,22 @@ export const Dashboard = () => {
             if (line.startsWith('data: ') && !line.includes('[DONE]')) {
               try {
                 const parsed = JSON.parse(line.slice(6));
+                
+                if (parsed.error) {
+                  setChatLogs(prev => {
+                    const updated = [...prev];
+                    if (updated.length > 0) {
+                      updated[updated.length - 1] = {
+                        sender: 'agent',
+                        role: 'CampusMind AI System Alert',
+                        text: `⚠️ **System Notice:** ${parsed.error}\n\nFalling back to high-speed local academic secretary mode...`
+                      };
+                    }
+                    return updated;
+                  });
+                  continue;
+                }
+
                 if (parsed.chain && parsed.chain.length > 0) {
                   currentChain = parsed.chain;
                 }
@@ -191,7 +225,9 @@ export const Dashboard = () => {
                   ? `Multi-Agent System (${currentChain.join(' ➔ ')})`
                   : 'Autonomous Agent';
 
-                const displayContent = accumulatedResponse || `🔄 *Executing Node: ${parsed.agent || parsed.node || 'Processing'}...*`;
+                const rawNode = parsed.agent || parsed.node || 'Processing';
+                const cleanNode = rawNode.replace('__interrupt__', 'Governance Check').replace('__start__', 'Initialization');
+                const displayContent = accumulatedResponse || `🔄 *Executing Node: ${cleanNode}...*`;
 
                 setChatLogs(prev => {
                   const updated = [...prev];
@@ -204,7 +240,9 @@ export const Dashboard = () => {
                   }
                   return updated;
                 });
-              } catch (e) {}
+              } catch (e) {
+                console.error('SSE JSON parsing error:', e);
+              }
             }
           }
         }
@@ -218,7 +256,8 @@ export const Dashboard = () => {
           body: JSON.stringify({
             query: userText,
             user_name: user?.name || 'User',
-            user_role: user?.role || 'student'
+            user_role: user?.role || 'student',
+            student_id: user?.rollNumber || user?.studentId || user?._id
           })
         });
         if (fallbackRes.ok) {
@@ -235,6 +274,14 @@ export const Dashboard = () => {
       }
     } catch (err) {
       console.error('Streaming connection error:', err);
+      setChatLogs(prev => [
+        ...prev,
+        {
+          sender: 'agent',
+          role: 'CampusMind Network Alert',
+          text: `⚠️ **Connection Notice:** Unable to reach AI microservice (${err.message || 'Network Timeout'}). Please verify connection.`
+        }
+      ]);
     }
   };
 

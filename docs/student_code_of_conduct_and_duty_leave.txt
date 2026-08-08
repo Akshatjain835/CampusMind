@@ -1,0 +1,28 @@
+==============================================================================
+DEPARTMENT OF COMPUTER SCIENCE & ENGINEERING - STUDENT CONDUCT & DUTY LEAVE
+==============================================================================
+
+SECTION 1: DUTY LEAVE POLICY (ACADEMIC / SPORTS / PLACEMENTS)
+------------------------------------------------------------------------------
+Clause 1.1: Eligible Events for Duty Leave
+- Duty Leave (DL) is awarded for students officially representing the institution in:
+  1. National/State Hackathons & Coding Competitions.
+  2. Placement drives and off-campus recruitment rounds.
+  3. Inter-university Sports & Cultural competitions.
+  4. IEEE / ACM research conference presentations.
+
+Clause 1.2: Duty Leave Limits & Attendance Credit
+- Maximum allowable Duty Leave per semester is 10 working days.
+- Full attendance credit (100% attendance count) is granted for approved Duty Leave days upon submission of participation certificates verified by the Faculty Incharge within 3 working days of the event.
+
+SECTION 2: STUDENT SCHOLARSHIPS & RESEARCH GRANTS
+------------------------------------------------------------------------------
+Clause 2.1: Departmental Innovation Grants
+- Undergraduate Capstone project teams can apply for Departmental Innovation Grants of up to Rs. 25,000 for hardware prototyping and cloud compute credits.
+- Minimum GPA requirement for grant eligibility is 7.5 CGPA with zero active backlogs.
+
+SECTION 3: GRIEVANCE REDRESSAL & DISCIPLINE
+------------------------------------------------------------------------------
+Clause 3.1: Anti-Ragging & Code of Conduct
+- The department operates a strict zero-tolerance policy towards ragging, harassment, or academic dishonesty (plagiarism > 15%).
+- Grievances can be filed anonymously through the DepartmentAI Governance Portal or submitted directly to the Women's Redressal / Anti-Ragging Cell.

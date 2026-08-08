@@ -95,5 +95,21 @@ class TestPlannerAndGraph(unittest.TestCase):
         print("Agent Chain:", final_state["agent_chain"])
         print("Final Synthesized Response:\n", final_state["final_response"])
 
+    def test_router_node_typo_timetable(self):
+        from app.graphs.department_graph import router_node, DepartmentState
+        state: DepartmentState = {
+            "user_name": "Rahul Sharma",
+            "user_role": "student",
+            "semester": "6th Semester",
+            "section": "Section A",
+            "query": "What is the timettable for section A",
+            "intent": None,
+            "context": None,
+            "agent_chain": [],
+            "final_response": None
+        }
+        res = router_node(state)
+        self.assertEqual(res["intent"], "timetable_query")
+
 if __name__ == "__main__":
     unittest.main()
